@@ -1,4 +1,4 @@
-package com.jayjd.boxtop;
+package com.jayjd.boxtop.adapter;
 
 import android.content.Context;
 import android.view.ViewGroup;
@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 import com.blankj.utilcode.util.AppUtils;
 import com.chad.library.adapter4.BaseQuickAdapter;
 import com.chad.library.adapter4.viewholder.QuickViewHolder;
+import com.jayjd.boxtop.R;
 
 public class AppIconAdapter extends BaseQuickAdapter<AppUtils.AppInfo, QuickViewHolder> {
 
@@ -23,8 +24,16 @@ public class AppIconAdapter extends BaseQuickAdapter<AppUtils.AppInfo, QuickView
         if (appInfo != null) {
             if (appInfo.getPackageName().isEmpty()) {
                 quickViewHolder.setGone(R.id.iv_icon, true);
-                quickViewHolder.setVisible(R.id.tv_name, false);
                 quickViewHolder.setGone(R.id.iv_add, false);
+                if (appInfo.getName().equals("system")) {
+                    quickViewHolder.setGone(R.id.tv_name, false);
+                    quickViewHolder.setImageResource(R.id.iv_add, R.drawable.ic_apps_24dp);
+                    quickViewHolder.setText(R.id.tv_name, "系统应用");
+                } else {
+                    quickViewHolder.setVisible(R.id.tv_name, false);
+                    quickViewHolder.setImageResource(R.id.iv_add, R.drawable.ic_add_24dp);
+                }
+
             } else {
                 quickViewHolder.setGone(R.id.iv_icon, false);
                 quickViewHolder.setGone(R.id.tv_name, false);

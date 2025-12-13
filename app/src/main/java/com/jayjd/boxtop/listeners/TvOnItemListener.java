@@ -1,4 +1,4 @@
-package com.jayjd.boxtop;
+package com.jayjd.boxtop.listeners;
 
 import android.view.View;
 
