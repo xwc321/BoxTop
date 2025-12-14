@@ -14,6 +14,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -119,6 +120,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                 });
                 allDialogGrid.setOnItemListener(new TvOnItemListener());
                 allDialogGrid.requestFocus();
+                allAppsContainer.setVisibility(View.INVISIBLE);
                 showMaterialAlertDialog(this, "系统应用", inflate);
             } else {
                 AppUtils.launchApp(appInfo.getPackageName());
@@ -361,9 +363,18 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         }
     }
 
+    @SuppressLint("GestureBackNavigation")
     public void showMaterialAlertDialog(Context context, String titleName, View rootView) {
         Dialog dialog = new Dialog(context, R.style.CustomDialogTheme);
         dialog.setContentView(rootView);
+        dialog.setOnKeyListener((dialog1, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_BACK) {
+                allAppsContainer.setVisibility(View.VISIBLE);
+                appListGrid.requestFocus();
+                appListGrid.scrollToPosition(0);
+            }
+            return false;
+        });
         dialog.show();
     }
 
