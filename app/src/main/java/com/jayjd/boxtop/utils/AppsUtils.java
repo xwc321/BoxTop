@@ -48,7 +48,7 @@ public class AppsUtils {
             info.setName(app.loadLabel(packageManager).toString());
 
             // icon (图标)
-            info.setIcon(app.loadIcon(packageManager));
+            info.setAppIcon(app.loadIcon(packageManager));
 
             // isSystem (判断是否是系统应用)
             // ApplicationInfo.FLAG_SYSTEM 用于标记系统应用

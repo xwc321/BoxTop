@@ -10,7 +10,7 @@
         android:id="@+id/all_apps_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/bg_blur_dialog"
+        android:background="@drawable/bg_blur_card"
         android:padding="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -30,6 +30,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:spanCount="3"
             app:tv_horizontalSpacingWithMargins="8dp"
+            app:tv_selectedItemIsCentered="true"
             app:tv_verticalSpacingWithMargins="8dp"
             tools:listitem="@layout/activity_icon_item" />
     </androidx.constraintlayout.widget.ConstraintLayout>

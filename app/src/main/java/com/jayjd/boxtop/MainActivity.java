@@ -2,17 +2,11 @@ package com.jayjd.boxtop;
 
 import android.annotation.SuppressLint;
 import android.app.Dialog;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -31,6 +25,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.palette.graphics.Palette;
 
 import com.blankj.utilcode.util.AppUtils;
+import com.blankj.utilcode.util.ConvertUtils;
 import com.blankj.utilcode.util.ScreenUtils;
 import com.bumptech.glide.Glide;
 import com.chad.library.adapter4.BaseQuickAdapter;
@@ -39,6 +34,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.jayjd.boxtop.adapter.AppIconAdapter;
 import com.jayjd.boxtop.adapter.SettingsIconAdapter;
+import com.jayjd.boxtop.dao.FavoriteAppInfoDao;
+import com.jayjd.boxtop.database.AppDataBase;
 import com.jayjd.boxtop.entity.AppInfo;
 import com.jayjd.boxtop.enums.TopSettingsIcons;
 import com.jayjd.boxtop.listeners.TvOnItemListener;
@@ -73,6 +70,9 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     private List<AppInfo> systemApps = new ArrayList<>();
 
 
+    AppDataBase appDataBase;
+    FavoriteAppInfoDao favoriteAppInfoDao;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        initDefaleHome();
+//        initDefaleHome();
         initView();
         initData();
         initListener();
@@ -126,6 +126,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                 AppUtils.launchApp(appInfo.getPackageName());
             }
         });
+
         favoriteAppsAdapter.setOnItemLongClickListener((baseQuickAdapter, view, position) -> {
             Log.d("MainActivity", "onItemChildLongClick position = " + position);
             return showAppSettingsDialog(baseQuickAdapter, position);
@@ -139,7 +140,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                 AppIconAdapter dialogAppIconAdapter = new AppIconAdapter();
                 allDialogGrid.setAdapter(dialogAppIconAdapter);
                 dialogAppIconAdapter.setItems(allApps);
-                dialogAppIconAdapter.setOnItemClickListener((baseQuickAdapter1, view1, i1) -> addTopAppInfo(baseQuickAdapter1, i1, favoriteAppsAdapter));
+                dialogAppIconAdapter.setOnItemClickListener((baseQuickAdapter1, view1, i1) -> addTopAppAllInfo(baseQuickAdapter1, i1, favoriteAppsAdapter));
                 allDialogGrid.setOnItemListener(new TvOnItemListener());
                 allDialogGrid.requestFocus();
                 showMaterialAlertDialog(this, "所有应用", inflate);
@@ -193,16 +194,19 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         appListGrid = findViewById(R.id.all_apps_grid);
 
         topSettingsBar.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.HORIZONTAL, false));
-        topSettingsBar.setOnInBorderKeyEventListener(new ViewAnimationShake(topSettingsBar, this, 0, this));
         favoriteAppsGrid.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.HORIZONTAL, false));
-        favoriteAppsGrid.setOnInBorderKeyEventListener(new ViewAnimationShake(favoriteAppsGrid, this, 1, this));
         appListGrid.setLayoutManager(new V7GridLayoutManager(this, 4));
+
+        topSettingsBar.setOnInBorderKeyEventListener(new ViewAnimationShake(topSettingsBar, this, 0, this));
+        favoriteAppsGrid.setOnInBorderKeyEventListener(new ViewAnimationShake(favoriteAppsGrid, this, 1, this));
         appListGrid.setOnInBorderKeyEventListener(new ViewAnimationShake(appListGrid, this, 2, this));
 
-        favoriteAppsGrid.getBackground().mutate().setAlpha(128);
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private void initData() {
+        appDataBase = AppDataBase.getInstance(this);
+        favoriteAppInfoDao = appDataBase.getFavoriteAppInfoDao();
         topSettingsAdapter = new SettingsIconAdapter();
         appListAdapter = new AppIconAdapter();
         favoriteAppsAdapter = new AppIconAdapter();
@@ -216,13 +220,13 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         new Thread(() -> {
             List<AppInfo> tempAllApps = AppsUtils.getAppsInfo(this);
             getAllAppsBanner(tempAllApps);
-            allApps = Lists.newArrayList(Iterables.filter(tempAllApps, appInfo -> {
-                if (appInfo != null) {
-                    return !appInfo.isSystem();
+            allApps = Lists.newArrayList(Iterables.filter(tempAllApps, AppAllInfo -> {
+                if (AppAllInfo != null) {
+                    return !AppAllInfo.isSystem();
                 }
                 return false;
             }));
-            systemApps = Lists.newArrayList(Iterables.filter(tempAllApps, appInfo -> appInfo != null && appInfo.isSystem()));
+            systemApps = Lists.newArrayList(Iterables.filter(tempAllApps, AppAllInfo -> AppAllInfo != null && AppAllInfo.isSystem()));
             Iterator<AppInfo> iterator = systemApps.iterator();
             while (iterator.hasNext()) {
                 AppInfo next = iterator.next();
@@ -232,25 +236,24 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                 }
             }
             allApps.add(allApps.size(), ToolUtils.getEmptyAppInfo("system"));
-            favoriteApps.add(favoriteAppsAdapter.getItemCount(), ToolUtils.getEmptyAppInfo("add"));
+            List<AppInfo> favoriteAppInfos = favoriteAppInfoDao.getAllFavoriteAppInfo();
+            favoriteApps.addAll(favoriteAppInfos);
+            favoriteApps.add(favoriteApps.size(), ToolUtils.getEmptyAppInfo("add"));
             Log.d(TAG, "initData: 数据处理完成");
-            new Handler(Looper.getMainLooper()).post(() -> {
+            runOnUiThread(() -> {
                 Log.d(TAG, "initData: 更新UI");
                 appListAdapter.setItems(allApps);
                 appListAdapter.notifyDataSetChanged();
                 favoriteAppsAdapter.setItems(favoriteApps);
                 favoriteAppsAdapter.notifyDataSetChanged();
                 favoriteAppsGrid.requestFocus();
-//                favoriteAppsGrid.post(() -> {
-//                    favoriteAppsGrid.scrollToPosition(0);
-//                    RecyclerView.ViewHolder viewHolderForAdapterPosition = favoriteAppsGrid.findViewHolderForAdapterPosition(0);
-//                    if (viewHolderForAdapterPosition != null) {
-//                        viewHolderForAdapterPosition.itemView.requestFocus();
-//                    } else {
-//                        favoriteAppsGrid.requestFocus();
-//                    }
-//                });
-                Log.d(TAG, "initData: 更新UI完成");
+//                topSettingsBar.requestFocus();
+//                topSettingsBar.setSelectedPosition(1);
+//                favoriteAppsGrid.getOnItem
+
+//                favoriteAppsGrid.setSelectionWithSmooth(0);
+//                favoriteAppsGrid.setSelection(0);
+//                favoriteAppsGrid.scrollToPosition(0);
             });
         }).start();
     }
@@ -262,48 +265,6 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             int screenHeight = ScreenUtils.getScreenHeight();
             allAppsContainer.setTranslationY(screenHeight);
         });
-    }
-
-    /**
-     * 跳转到系统设置中更改 Home 默认应用的界面。
-     * 兼容 Android 5.0 及以上设备。
-     */
-    private void goToHomeSettings() {
-        Intent intent;
-
-        // 优先级 1: 尝试直接跳转到 "Home 应用设置" (Settings.ACTION_HOME_SETTINGS)
-        // 这是 Android 官方 API，在许多原生和轻定制系统中有效。
-        try {
-            intent = new Intent(Settings.ACTION_HOME_SETTINGS);
-            startActivity(intent);
-            Toast.makeText(this, "请选择您的桌面应用", Toast.LENGTH_LONG).show();
-            return;
-        } catch (ActivityNotFoundException e1) {
-            // Log.e("Launcher", "ACTION_HOME_SETTINGS not found", e1);
-        }
-
-        // 优先级 2: 尝试跳转到“默认应用管理”界面 (Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
-        // 此 Intent 在 Android 6.0 (API 23) 及以上版本中更常见，但作为回退选项兼容性更好。
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                intent = new Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS);
-                startActivity(intent);
-                Toast.makeText(this, "请在默认应用设置中更改桌面", Toast.LENGTH_LONG).show();
-                return;
-            }
-        } catch (ActivityNotFoundException e2) {
-            // Log.e("Launcher", "ACTION_MANAGE_DEFAULT_APPS_SETTINGS not found", e2);
-        }
-
-        // 优先级 3 (最后的通用回退): 跳转到主设置界面
-        // 如果前两种都失败，让用户自己去寻找。
-        try {
-            intent = new Intent(Settings.ACTION_SETTINGS);
-            startActivity(intent);
-            Toast.makeText(this, "请手动进入设置中查找并更改默认桌面", Toast.LENGTH_LONG).show();
-        } catch (ActivityNotFoundException e3) {
-            Toast.makeText(this, "无法打开系统设置", Toast.LENGTH_SHORT).show();
-        }
     }
 
 
@@ -325,14 +286,9 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                             Toast.makeText(this, "系统应用无法卸载", Toast.LENGTH_SHORT).show();
                             return;
                         }
-                        new MaterialAlertDialogBuilder(this)
-                                .setTitle("卸载应用")
-                                .setMessage("确定要卸载「" + appInfo.getName() + "」吗？")
-                                .setPositiveButton("卸载", (d, w) -> {
-                                    ToolUtils.uninstallApp(this, appInfo.getPackageName());
-                                })
-                                .setNegativeButton("取消", null)
-                                .show();
+                        new MaterialAlertDialogBuilder(this).setTitle("卸载应用").setMessage("确定要卸载「" + appInfo.getName() + "」吗？").setPositiveButton("卸载", (d, w) -> {
+                            ToolUtils.uninstallApp(this, appInfo.getPackageName());
+                        }).setNegativeButton("取消", null).show();
                     }
                 }).show();
         return true;
@@ -345,33 +301,40 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         return inflate;
     }
 
-    private void addTopAppInfo(@NonNull BaseQuickAdapter<AppInfo, ?> baseQuickAdapter, int i, AppIconAdapter topAppAdapter) {
-        AppInfo dialogAppInfo = baseQuickAdapter.getItem(i);
+    private void addTopAppAllInfo(@NonNull BaseQuickAdapter<AppInfo, ?> baseQuickAdapter, int i, AppIconAdapter topAppAdapter) {
+        AppInfo dialogAppAllInfo = baseQuickAdapter.getItem(i);
         List<AppInfo> items = topAppAdapter.getItems();
-        if (!dialogAppInfo.getPackageName().isEmpty()) {
-            ArrayList<AppInfo> appInfos = Lists.newArrayList(Iterables.filter(items, appInfo -> {
-                if (appInfo != null) {
-                    return appInfo.getPackageName().equals(dialogAppInfo.getPackageName());
+        if (!dialogAppAllInfo.getPackageName().isEmpty()) {
+            ArrayList<AppInfo> AppAllInfos = Lists.newArrayList(Iterables.filter(items, AppAllInfo -> {
+                if (AppAllInfo != null) {
+                    return AppAllInfo.getPackageName().equals(dialogAppAllInfo.getPackageName());
                 }
                 return false;
             }));
-            if (appInfos.isEmpty()) {
-                topAppAdapter.add(0, dialogAppInfo);
+            if (AppAllInfos.isEmpty()) {
+                topAppAdapter.add(0, dialogAppAllInfo);
+                new Thread(() -> {
+//                    favoriteAppInfoDao.insert(favoriteAppInfo);
+                }).start();
             } else {
-                Toast.makeText(this, dialogAppInfo.getName() + " 已添加", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, dialogAppAllInfo.getName() + " 已添加", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
-    @SuppressLint("GestureBackNavigation")
+
+
     public void showMaterialAlertDialog(Context context, String titleName, View rootView) {
         Dialog dialog = new Dialog(context, R.style.CustomDialogTheme);
         dialog.setContentView(rootView);
         dialog.setOnKeyListener((dialog1, keyCode, event) -> {
-            if (keyCode == KeyEvent.KEYCODE_BACK) {
-                allAppsContainer.setVisibility(View.VISIBLE);
-                appListGrid.requestFocus();
-                appListGrid.scrollToPosition(0);
+            if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN) {
+                if (titleName.equals("系统应用")) {
+                    allAppsContainer.setVisibility(View.VISIBLE);
+                    appListGrid.requestFocus();
+                } else {
+                    Log.d(TAG, "showMaterialAlertDialog: " + titleName);
+                }
             }
             return false;
         });
@@ -379,30 +342,35 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     }
 
     private void getAllAppsBanner(List<AppInfo> appsInfo) {
-        for (AppInfo appInfo : appsInfo) {
-            Drawable banner = ToolUtils.getTvAppIcon(this, appInfo.getPackageName());
-            Drawable icon = banner != null ? banner : appInfo.getIcon();
-            if (icon == null) continue;
+        for (AppInfo AppAllInfo : appsInfo) {
+            Drawable banner = ToolUtils.getTvAppIcon(this, AppAllInfo.getPackageName());
             if (banner != null) {
-                appInfo.setIcon(banner);
+                AppAllInfo.setAppBanner(banner);
+            } else {
+                if (AppAllInfo.getAppIcon() != null) {
+                    Bitmap bitmap = ConvertUtils.drawable2Bitmap(AppAllInfo.getAppIcon());
+                    if (bitmap == null) continue;
+                    Palette generate = Palette.from(bitmap).generate();
+                    Palette.Swatch dominantSwatch = generate.getDominantSwatch();
+                    if (dominantSwatch != null) {
+                        int normalizeColor = ToolUtils.normalizeBold(dominantSwatch.getRgb());
+                        AppAllInfo.setCardColor(normalizeColor);
+                    } else {
+                        AppAllInfo.setCardColor(Color.parseColor("#263238"));
+                    }
+                } else {
+                    AppAllInfo.setCardColor(Color.parseColor("#263238"));
+                }
             }
-            Bitmap bitmap = ToolUtils.drawableToSmallBitmap(icon, 24);
-            if (bitmap == null) continue;
-            appInfo.setBitmapIcon(bitmap);
-            Palette generate = Palette.from(bitmap).generate();
-            int dominantColor = generate.getDominantColor(Color.parseColor("#263238"));
-            int normalizeColor = ToolUtils.normalizeColor(dominantColor);
-            appInfo.setCardColor(normalizeColor);
         }
     }
 
     @SuppressLint("SetTextI18n")
-    private void showPreview(AppInfo appInfo) {
+    private void showPreview(AppInfo favoriteAppInfo) {
         previewPanel.setVisibility(View.VISIBLE);
-
-        previewIcon.setImageDrawable(appInfo.getIcon());
-        previewTitle.setText(appInfo.getName());
-        previewDesc.setText(appInfo.getPackageName() + " " + appInfo.getVersionName());
+        previewIcon.setImageDrawable(favoriteAppInfo.getAppIcon());
+        previewTitle.setText(favoriteAppInfo.getName());
+        previewDesc.setText(favoriteAppInfo.getPackageName() + " " + favoriteAppInfo.getVersionName());
 
         // 动画：淡入 + 放大
         previewPanel.setScaleX(0.9f);
@@ -413,15 +381,13 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     }
 
     private void showAllApps() {
-        if (previewPanel.getVisibility() == View.VISIBLE)
-            previewPanel.setVisibility(View.GONE);
+        if (previewPanel.getVisibility() == View.VISIBLE) previewPanel.setVisibility(View.GONE);
         topSettingsBar.setVisibility(View.GONE);
         int screenHeight = ScreenUtils.getScreenHeight();
         Log.d(TAG, "showAllApps: " + screenHeight);
         favoriteAppsContainer.animate().translationY(-screenHeight).setDuration(500).start();
-        allAppsContainer.animate().translationY(-screenHeight).setDuration(500).start();
+        allAppsContainer.animate().translationY(0).setDuration(500).start();
         appListGrid.requestFocus();
-        appListGrid.setSelectionWithSmooth(0);
     }
 
     private void showHomeApps() {
@@ -430,7 +396,6 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         favoriteAppsContainer.animate().translationY(0).setDuration(500).start();
         allAppsContainer.animate().translationY(screenHeight).setDuration(500).start();
         favoriteAppsGrid.requestFocus();
-        favoriteAppsGrid.setSelectionWithSmooth(0);
     }
 
 
@@ -438,12 +403,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         boolean defaultHome = ToolUtils.isDefaultHome(this);
         Log.d("MainActivity", "defaultHome = " + defaultHome);
         if (!defaultHome) {
-            new MaterialAlertDialogBuilder(this, R.style.CustomDialogTheme)
-                    .setTitle("设置为默认桌面")
-                    .setMessage("是否要设置为默认桌面？")
-                    .setPositiveButton("是", (dialog, which) -> goToHomeSettings())
-                    .setNegativeButton("否", null)
-                    .show();
+            new MaterialAlertDialogBuilder(this, R.style.CustomDialogTheme).setTitle("设置为默认桌面").setMessage("是否要设置为默认桌面？").setPositiveButton("是", (dialog, which) -> ToolUtils.goToHomeSettings(this)).setNegativeButton("否", null).show();
         }
     }
 

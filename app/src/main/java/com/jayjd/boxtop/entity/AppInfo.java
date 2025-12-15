@@ -1,16 +1,30 @@
 package com.jayjd.boxtop.entity;
 
-import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 
-import lombok.Data;
+import androidx.room.Entity;
+import androidx.room.Ignore;
+import androidx.room.PrimaryKey;
 
+import java.io.Serializable;
+
+import lombok.Data;
+@Entity(tableName = "app_info")
 @Data
-public class AppInfo {
+public class AppInfo implements Serializable {
+    @PrimaryKey(autoGenerate = true)
+    private int id;
+
     private String packageName;
     private String name;
-    private Drawable icon;
-    private Bitmap bitmapIcon;
+    @Ignore
+    private Drawable appIcon;
+    @Ignore
+    private Drawable appBanner;
+
+    private String appBannerPath;
+    private String appIconPath;
+
     private int cardColor;
     private String packagePath;
     private String versionName;

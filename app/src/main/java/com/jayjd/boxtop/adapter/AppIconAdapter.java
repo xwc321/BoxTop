@@ -26,7 +26,8 @@ public class AppIconAdapter extends BaseQuickAdapter<AppInfo, QuickViewHolder> {
     protected void onBindViewHolder(@NonNull QuickViewHolder quickViewHolder, int i, @Nullable AppInfo appInfo) {
         if (appInfo != null) {
             if (appInfo.getPackageName().isEmpty()) {
-                quickViewHolder.setGone(R.id.iv_icon, true);
+                quickViewHolder.setGone(R.id.app_icon, true);
+                quickViewHolder.setGone(R.id.app_banner, true);
                 quickViewHolder.setGone(R.id.iv_add, false);
                 if (appInfo.getName().equals("system")) {
                     quickViewHolder.setGone(R.id.tv_name, false);
@@ -37,12 +38,19 @@ public class AppIconAdapter extends BaseQuickAdapter<AppInfo, QuickViewHolder> {
                     quickViewHolder.setImageResource(R.id.iv_add, R.drawable.ic_add_24dp);
                 }
             } else {
-                quickViewHolder.setGone(R.id.iv_icon, false);
                 quickViewHolder.setGone(R.id.tv_name, false);
-                MaterialCardView cardView = quickViewHolder.getView(R.id.card);
-                cardView.setCardBackgroundColor(appInfo.getCardColor());
-                ImageView imageView = quickViewHolder.getView(R.id.iv_icon);
-                Glide.with(getContext()).load(appInfo.getIcon()).into(imageView);
+                if (appInfo.getAppBanner() != null) {
+                    quickViewHolder.setGone(R.id.app_icon, false);
+
+                    ImageView imageView = quickViewHolder.getView(R.id.app_banner);
+                    Glide.with(getContext()).load(appInfo.getAppBanner()).into(imageView);
+                } else {
+                    quickViewHolder.setGone(R.id.app_banner, false);
+                    MaterialCardView cardView = quickViewHolder.getView(R.id.card);
+                    cardView.setCardBackgroundColor(appInfo.getCardColor());
+                    ImageView imageView = quickViewHolder.getView(R.id.app_icon);
+                    Glide.with(getContext()).load(appInfo.getAppIcon()).into(imageView);
+                }
                 quickViewHolder.setText(R.id.tv_name, appInfo.getName());
             }
         }

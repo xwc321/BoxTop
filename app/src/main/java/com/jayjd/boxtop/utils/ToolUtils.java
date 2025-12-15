@@ -2,6 +2,7 @@ package com.jayjd.boxtop.utils;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -13,6 +14,7 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.provider.Settings;
 import android.view.View;
 import android.view.animation.BounceInterpolator;
 import android.widget.Toast;
@@ -206,9 +208,9 @@ public class ToolUtils {
         }
 
         // 优先级4: 加载普通应用图标
-        if (icon == null) {
-            icon = appInfo.loadIcon(pm);
-        }
+//        if (icon == null) {
+//            icon = appInfo.loadIcon(pm);
+//        }
 
         return icon;
     }
@@ -227,4 +229,85 @@ public class ToolUtils {
 
         return Color.HSVToColor(hsv);
     }
+    /**
+     * 跳转到系统设置中更改 Home 默认应用的界面。
+     * 兼容 Android 5.0 及以上设备。
+     */
+    public static void goToHomeSettings(Activity activity) {
+        Intent intent;
+
+        // 优先级 1: 尝试直接跳转到 "Home 应用设置" (Settings.ACTION_HOME_SETTINGS)
+        // 这是 Android 官方 API，在许多原生和轻定制系统中有效。
+        try {
+            intent = new Intent(Settings.ACTION_HOME_SETTINGS);
+            activity.startActivity(intent);
+            Toast.makeText(activity, "请选择您的桌面应用", Toast.LENGTH_LONG).show();
+            return;
+        } catch (ActivityNotFoundException e1) {
+            // Log.e("Launcher", "ACTION_HOME_SETTINGS not found", e1);
+        }
+
+        // 优先级 2: 尝试跳转到“默认应用管理”界面 (Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
+        // 此 Intent 在 Android 6.0 (API 23) 及以上版本中更常见，但作为回退选项兼容性更好。
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                intent = new Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS);
+                activity.startActivity(intent);
+                Toast.makeText(activity, "请在默认应用设置中更改桌面", Toast.LENGTH_LONG).show();
+                return;
+            }
+        } catch (ActivityNotFoundException e2) {
+            // Log.e("Launcher", "ACTION_MANAGE_DEFAULT_APPS_SETTINGS not found", e2);
+        }
+
+        // 优先级 3 (最后的通用回退): 跳转到主设置界面
+        // 如果前两种都失败，让用户自己去寻找。
+        try {
+            intent = new Intent(Settings.ACTION_SETTINGS);
+            activity.startActivity(intent);
+            Toast.makeText(activity, "请手动进入设置中查找并更改默认桌面", Toast.LENGTH_LONG).show();
+        } catch (ActivityNotFoundException e3) {
+            Toast.makeText(activity, "无法打开系统设置", Toast.LENGTH_SHORT).show();
+        }
+    }
+    public static int normalizeBold(int color) {
+        if (Color.alpha(color) < 255) {
+            return Color.parseColor("#444444");
+        }
+
+        float[] hsv = new float[3];
+        Color.colorToHSV(color, hsv);
+
+        // ✅ 保留主色调（不动 H）
+        // hsv[0] 不动
+
+        // ✅ 饱和度：只稍微收一点
+        hsv[1] = Math.min(hsv[1], 0.75f);
+
+        // ✅ 亮度：电视防发白
+        if (hsv[2] > 0.85f) {
+            hsv[2] = 0.85f;
+        } else if (hsv[2] < 0.35f) {
+            hsv[2] = 0.35f;
+        }
+
+        return Color.HSVToColor(255, hsv);
+    }
+    public static int normalizeForBackground(int color) {
+        if (Color.alpha(color) < 255) {
+            return Color.parseColor("#263238");
+        }
+
+        float[] hsv = new float[3];
+        Color.colorToHSV(color, hsv);
+
+        // 降饱和，防止刺眼
+        hsv[1] = Math.min(hsv[1], 0.30f);
+
+        // 控亮度，电视非常重要
+        hsv[2] = Math.max(0.22f, Math.min(hsv[2], 0.38f));
+
+        return Color.HSVToColor(255, hsv);
+    }
+
 }

@@ -97,14 +97,14 @@
     <!--所有应用列表-->
     <FrameLayout
         android:id="@+id/all_apps_container"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:layout_margin="16dp"
         android:background="@drawable/bg_blur_card"
-        android:focusable="false"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/favorite_apps_container">
+        app:layout_constraintTop_toTopOf="parent">
 
         <com.owen.tvrecyclerview.widget.TvRecyclerView
             android:id="@+id/all_apps_grid"
@@ -114,6 +114,7 @@
             app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
             app:spanCount="4"
             app:tv_horizontalSpacingWithMargins="8dp"
+            app:tv_selectedItemIsCentered="true"
             app:tv_verticalSpacingWithMargins="8dp"
             tools:listitem="@layout/activity_icon_item" />
     </FrameLayout>
@@ -121,13 +122,13 @@
     <FrameLayout
         android:id="@+id/favorite_apps_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:focusable="false"
+        android:layout_height="wrap_content"
         android:padding="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0">
 
         <com.owen.tvrecyclerview.widget.TvRecyclerView
             android:id="@+id/favorite_apps_grid"
@@ -139,7 +140,6 @@
             android:padding="16dp"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             app:tv_horizontalSpacingWithMargins="8dp"
-            app:tv_isMemoryFocus="false"
             app:tv_selectedItemIsCentered="true"
             app:tv_verticalSpacingWithMargins="8dp"
             tools:listitem="@layout/activity_icon_item" />

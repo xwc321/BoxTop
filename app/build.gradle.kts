@@ -53,7 +53,7 @@ dependencies {
     //noinspection UseTomlInstead
     implementation("com.google.code.gson:gson:2.13.2")
     // https://mvnrepository.com/artifact/org.projectlombok/lombok
-    //noinspection UseTomlInstead
+    //noinspection AnnotationProcessorOnCompilePath,UseTomlInstead
     implementation("org.projectlombok:lombok:1.18.42")
     //noinspection UseTomlInstead
     annotationProcessor("org.projectlombok:lombok:1.18.42")
@@ -65,4 +65,9 @@ dependencies {
     implementation("com.github.bumptech.glide:okhttp3-integration:4.16.0") {
         exclude("com.android.support")
     }
+
+    //noinspection UseTomlInstead
+    implementation("androidx.room:room-runtime:2.8.4")
+    //noinspection UseTomlInstead
+    annotationProcessor("androidx.room:room-compiler:2.8.4")
 }
