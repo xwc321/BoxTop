@@ -26,6 +26,8 @@ import androidx.palette.graphics.Palette;
 
 import com.blankj.utilcode.util.AppUtils;
 import com.blankj.utilcode.util.ConvertUtils;
+import com.blankj.utilcode.util.EncodeUtils;
+import com.blankj.utilcode.util.NetworkUtils;
 import com.blankj.utilcode.util.ScreenUtils;
 import com.bumptech.glide.Glide;
 import com.chad.library.adapter4.BaseQuickAdapter;
@@ -53,6 +55,11 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements ViewAnimateListener {
     private static final String TAG = "MainActivity";
+
+    static {
+        System.loadLibrary("boxtop");
+    }
+
     FrameLayout previewPanel;
     ImageView previewIcon;
     TextView previewTitle;
@@ -91,7 +98,10 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
 
     private void initListener() {
         topSettingsAdapter.setOnItemClickListener((baseQuickAdapter, view, i) -> {
-
+            TopSettingsIcons item = baseQuickAdapter.getItem(i);
+            if (item == TopSettingsIcons.WIFI_ICON) {
+                NetworkUtils.openWirelessSettings();
+            }
         });
         appListAdapter.setOnItemLongClickListener((parent, view, position) -> {
             Log.d("MainActivity", "onItemChildLongClick position = " + position);
@@ -121,6 +131,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                 allDialogGrid.setOnItemListener(new TvOnItemListener());
                 allDialogGrid.requestFocus();
                 allAppsContainer.setVisibility(View.INVISIBLE);
+                previewPanel.setVisibility(View.INVISIBLE);
                 showMaterialAlertDialog(this, "系统应用", inflate);
             } else {
                 AppUtils.launchApp(appInfo.getPackageName());
@@ -268,7 +279,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         }
         new MaterialAlertDialogBuilder(this) //
                 .setTitle("操作") //
-                .setItems(new CharSequence[]{"启动", "查看", "卸载"}, (dialog, which) -> {
+                .setItems(new CharSequence[]{"启动", "查看", "卸载", "删除",}, (dialog, which) -> {
                     Log.d("MainActivity", "onClick position = " + position);
                     if (which == 0) {
                         AppUtils.launchApp(appInfo.getPackageName());
@@ -282,16 +293,12 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                         new MaterialAlertDialogBuilder(this).setTitle("卸载应用").setMessage("确定要卸载「" + appInfo.getName() + "」吗？").setPositiveButton("卸载", (d, w) -> {
                             ToolUtils.uninstallApp(this, appInfo.getPackageName());
                         }).setNegativeButton("取消", null).show();
+                    } else if (which == 3) {
+                        favoriteAppsAdapter.remove(appInfo);
+                        new Thread(() -> favoriteAppInfoDao.delete(appInfo)).start();
                     }
                 }).show();
         return true;
-    }
-
-    public View initCustomTitle(Context context, String title) {
-        View inflate = LayoutInflater.from(context).inflate(R.layout.activity_custom_title, null);
-        TextView customTextView = inflate.findViewById(R.id.custom_textview);
-        customTextView.setText(title);
-        return inflate;
     }
 
     private void addTopAppAllInfo(@NonNull BaseQuickAdapter<AppInfo, ?> baseQuickAdapter, int i, AppIconAdapter topAppAdapter) {
@@ -306,9 +313,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             }));
             if (AppAllInfos.isEmpty()) {
                 topAppAdapter.add(0, dialogAppAllInfo);
-                new Thread(() -> {
-//                    favoriteAppInfoDao.insert(favoriteAppInfo);
-                }).start();
+                new Thread(() -> favoriteAppInfoDao.insert(dialogAppAllInfo)).start();
             } else {
                 Toast.makeText(this, dialogAppAllInfo.getName() + " 已添加", Toast.LENGTH_SHORT).show();
             }
@@ -334,35 +339,43 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     }
 
     private void getAllAppsBanner(List<AppInfo> appsInfo) {
-        for (AppInfo AppAllInfo : appsInfo) {
-            Drawable banner = ToolUtils.getTvAppIcon(this, AppAllInfo.getPackageName());
+        for (AppInfo appInfo : appsInfo) {
+            Drawable banner = ToolUtils.getTvAppIcon(this, appInfo.getPackageName());
             if (banner != null) {
-                AppAllInfo.setAppBanner(banner);
+                byte[] bytes = ConvertUtils.drawable2Bytes(banner);
+                String bannerStr = EncodeUtils.base64Encode2String(bytes);
+                appInfo.setAppBannerBase64(bannerStr);
+                appInfo.setAppBanner(banner);
+                appInfo.setBanner(true);
             } else {
-                if (AppAllInfo.getAppIcon() != null) {
-                    Bitmap bitmap = ConvertUtils.drawable2Bitmap(AppAllInfo.getAppIcon());
+                if (appInfo.getAppIcon() != null) {
+                    byte[] bytes = ConvertUtils.drawable2Bytes(appInfo.getAppIcon());
+                    String iconStr = EncodeUtils.base64Encode2String(bytes);
+                    appInfo.setAppIconBase64(iconStr);
+                    Bitmap bitmap = ConvertUtils.drawable2Bitmap(appInfo.getAppIcon());
                     if (bitmap == null) continue;
                     Palette generate = Palette.from(bitmap).generate();
                     Palette.Swatch dominantSwatch = generate.getDominantSwatch();
                     if (dominantSwatch != null) {
                         int normalizeColor = ToolUtils.normalizeBold(dominantSwatch.getRgb());
-                        AppAllInfo.setCardColor(normalizeColor);
+                        appInfo.setCardColor(normalizeColor);
                     } else {
-                        AppAllInfo.setCardColor(Color.parseColor("#263238"));
+                        appInfo.setCardColor(Color.parseColor("#263238"));
                     }
                 } else {
-                    AppAllInfo.setCardColor(Color.parseColor("#263238"));
+                    appInfo.setCardColor(Color.parseColor("#263238"));
                 }
             }
         }
     }
 
     @SuppressLint("SetTextI18n")
-    private void showPreview(AppInfo favoriteAppInfo) {
+    private void showPreview(AppInfo appInfo) {
         previewPanel.setVisibility(View.VISIBLE);
-        previewIcon.setImageDrawable(favoriteAppInfo.getAppIcon());
-        previewTitle.setText(favoriteAppInfo.getName());
-        previewDesc.setText(favoriteAppInfo.getPackageName() + " " + favoriteAppInfo.getVersionName());
+        Drawable drawable = ToolUtils.getBase64ToDrawable(appInfo.isBanner() ? appInfo.getAppBannerBase64() : appInfo.getAppIconBase64());
+        Glide.with(this).load(drawable).into(previewIcon);
+        previewTitle.setText(appInfo.getName());
+        previewDesc.setText(appInfo.getPackageName() + " " + appInfo.getVersionName());
 
         // 动画：淡入 + 放大
         previewPanel.setScaleX(0.9f);

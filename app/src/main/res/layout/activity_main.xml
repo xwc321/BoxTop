@@ -67,7 +67,8 @@
                 android:id="@+id/preview_icon"
                 android:layout_width="120dp"
                 android:layout_height="120dp"
-                android:scaleType="fitCenter" />
+                android:scaleType="fitCenter"
+                app:layout_constraintDimensionRatio="16:9" />
 
             <LinearLayout
                 android:layout_width="0dp"

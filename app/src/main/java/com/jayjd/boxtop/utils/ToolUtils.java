@@ -19,8 +19,29 @@ import android.view.View;
 import android.view.animation.BounceInterpolator;
 import android.widget.Toast;
 
+import com.blankj.utilcode.util.ConvertUtils;
+import com.blankj.utilcode.util.EncodeUtils;
 import com.blankj.utilcode.util.SizeUtils;
+import com.jayjd.boxtop.JNIUtils;
 import com.jayjd.boxtop.entity.AppInfo;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.DESKeySpec;
 
 public class ToolUtils {
     public static void startAnimation(View view) {
@@ -35,6 +56,71 @@ public class ToolUtils {
                 .start();
     }
 
+    public static byte[] desDecrypt(byte[] encryptText, String desKeyParameter) {
+        try {
+            SecureRandom sr = new SecureRandom();
+            byte[] rawKeyData = desKeyParameter.getBytes();
+            DESKeySpec dks = new DESKeySpec(rawKeyData);
+            SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("DES");
+            SecretKey key = keyFactory.generateSecret(dks);
+            @SuppressLint("GetInstance") Cipher cipher = Cipher.getInstance("DES");
+            cipher.init(Cipher.DECRYPT_MODE, key, sr);
+            return cipher.doFinal(encryptText);
+        } catch (InvalidKeyException | NoSuchAlgorithmException | InvalidKeySpecException |
+                 NoSuchPaddingException | BadPaddingException | IllegalBlockSizeException e) {
+            return "".getBytes();
+        }
+    }
+
+    public static String base64ToString(String entity) {
+        byte[] bytes;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            bytes = desDecrypt(Base64.getDecoder().decode(entity), JNIUtils.getDecodePwd());
+        } else {
+            bytes = desDecrypt(android.util.Base64.decode(entity, android.util.Base64.DEFAULT), JNIUtils.getDecodePwd());
+        }
+        return new String(bytes);
+    }
+
+    public static String calculateApkHash(Context context) {
+        try {
+            String apkPath = context.getApplicationContext().getPackageCodePath();
+
+            // 创建 SHA-256 的 MessageDigest 实例
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            InputStream is = new FileInputStream(new File(apkPath));
+            byte[] buffer = new byte[1024];
+            int read;
+
+            // 读取文件并更新 MessageDigest
+            while ((read = is.read(buffer)) != -1) {
+                digest.update(buffer, 0, read);
+            }
+
+            is.close();
+
+            // 获取哈希值
+            byte[] hashBytes = digest.digest();
+
+            // 将哈希值转换为十六进制字符串
+            StringBuilder hashString = new StringBuilder();
+            for (byte b : hashBytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hashString.append('0');
+                hashString.append(hex);
+            }
+
+            return hashString.toString();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    public static Drawable getBase64ToDrawable(String iconBase64) {
+        byte[] bytes = EncodeUtils.base64Decode(iconBase64);
+        return ConvertUtils.bytes2Drawable(bytes);
+    }
     public static boolean isAppLaunchable(Context context, String packageName) {
         PackageManager packageManager = context.getPackageManager();
 

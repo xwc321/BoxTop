@@ -31,6 +31,18 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    ndkVersion = "26.1.10909125"
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
+    buildFeatures {
+        dataBinding = true
+        viewBinding = true
+        buildConfig = true
+    }
 }
 
 dependencies {
@@ -45,6 +57,8 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+
+    implementation("com.lzy.net:okgo:3.0.4")
 
     implementation("androidx.palette:palette:1.0.0")
     //noinspection UseTomlInstead

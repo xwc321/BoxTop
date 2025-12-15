@@ -9,6 +9,7 @@ import androidx.room.PrimaryKey;
 import java.io.Serializable;
 
 import lombok.Data;
+
 @Entity(tableName = "app_info")
 @Data
 public class AppInfo implements Serializable {
@@ -22,8 +23,10 @@ public class AppInfo implements Serializable {
     @Ignore
     private Drawable appBanner;
 
-    private String appBannerPath;
-    private String appIconPath;
+    private String appBannerBase64;
+    private String appIconBase64;
+
+    private boolean isBanner;
 
     private int cardColor;
     private String packagePath;

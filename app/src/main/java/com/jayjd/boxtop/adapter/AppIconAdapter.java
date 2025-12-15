@@ -1,6 +1,7 @@
 package com.jayjd.boxtop.adapter;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
@@ -13,6 +14,7 @@ import com.chad.library.adapter4.viewholder.QuickViewHolder;
 import com.google.android.material.card.MaterialCardView;
 import com.jayjd.boxtop.R;
 import com.jayjd.boxtop.entity.AppInfo;
+import com.jayjd.boxtop.utils.ToolUtils;
 
 public class AppIconAdapter extends BaseQuickAdapter<AppInfo, QuickViewHolder> {
 
@@ -39,17 +41,19 @@ public class AppIconAdapter extends BaseQuickAdapter<AppInfo, QuickViewHolder> {
                 }
             } else {
                 quickViewHolder.setGone(R.id.tv_name, false);
-                if (appInfo.getAppBanner() != null) {
+                if (appInfo.isBanner()) {
                     quickViewHolder.setGone(R.id.app_icon, false);
-
+                    Drawable drawable = ToolUtils.getBase64ToDrawable(appInfo.getAppBannerBase64());
                     ImageView imageView = quickViewHolder.getView(R.id.app_banner);
-                    Glide.with(getContext()).load(appInfo.getAppBanner()).into(imageView);
+                    Glide.with(getContext()).load(drawable).into(imageView);
                 } else {
                     quickViewHolder.setGone(R.id.app_banner, false);
                     MaterialCardView cardView = quickViewHolder.getView(R.id.card);
                     cardView.setCardBackgroundColor(appInfo.getCardColor());
+
                     ImageView imageView = quickViewHolder.getView(R.id.app_icon);
-                    Glide.with(getContext()).load(appInfo.getAppIcon()).into(imageView);
+                    Drawable drawable = ToolUtils.getBase64ToDrawable(appInfo.getAppIconBase64());
+                    Glide.with(getContext()).load(drawable).into(imageView);
                 }
                 quickViewHolder.setText(R.id.tv_name, appInfo.getName());
             }

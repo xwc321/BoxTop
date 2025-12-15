@@ -1,6 +1,7 @@
 package com.jayjd.boxtop.dao;
 
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
@@ -16,6 +17,9 @@ public interface FavoriteAppInfoDao {
 
     @Update
     void update(AppInfo favoriteAppInfo);
+
+    @Delete
+    void delete(AppInfo favoriteAppInfo);
 
     @Query("DELETE FROM app_info WHERE packageName = :packageName")
     void deleteByPackageName(String packageName);
