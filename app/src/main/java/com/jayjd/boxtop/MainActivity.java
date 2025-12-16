@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     SettingsIconAdapter topSettingsAdapter;
     private List<AppInfo> allApps = new ArrayList<>();
     private List<AppInfo> systemApps = new ArrayList<>();
+    private boolean isMoveApp = false;
 
 
     AppDataBase appDataBase;
@@ -148,7 +149,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             if (item.getPackageName().isEmpty()) {
                 View inflate = LayoutInflater.from(this).inflate(R.layout.activity_dialog_all_app, null);
                 TvRecyclerView allDialogGrid = inflate.findViewById(R.id.all_dialog_grid);
-                allDialogGrid.setLayoutManager(new V7GridLayoutManager(this, 4));
+                allDialogGrid.setLayoutManager(new V7GridLayoutManager(this, 2, V7GridLayoutManager.HORIZONTAL, false));
                 AppIconAdapter dialogAppIconAdapter = new AppIconAdapter();
                 allDialogGrid.setAdapter(dialogAppIconAdapter);
                 dialogAppIconAdapter.setItems(allApps);
@@ -280,7 +281,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         }
         new MaterialAlertDialogBuilder(this) //
                 .setTitle("操作") //
-                .setItems(new CharSequence[]{"启动", "查看", "卸载", "删除",}, (dialog, which) -> {
+                .setItems(new CharSequence[]{"启动", "查看", "卸载", "删除", "移动"}, (dialog, which) -> {
                     Log.d("MainActivity", "onClick position = " + position);
                     if (which == 0) {
                         AppUtils.launchApp(appInfo.getPackageName());
@@ -297,6 +298,8 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                     } else if (which == 3) {
                         favoriteAppsAdapter.remove(appInfo);
                         new Thread(() -> favoriteAppInfoDao.delete(appInfo)).start();
+                    } else if (which == 4) {
+                        isMoveApp = true;
                     }
                 }).show();
         return true;

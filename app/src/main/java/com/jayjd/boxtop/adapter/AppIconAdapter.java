@@ -38,23 +38,25 @@ public class AppIconAdapter extends BaseQuickAdapter<AppInfo, QuickViewHolder> {
                 } else {
                     quickViewHolder.setVisible(R.id.tv_name, false);
                     quickViewHolder.setImageResource(R.id.iv_add, R.drawable.ic_add_24dp);
+                    quickViewHolder.setText(R.id.tv_name, "添加应用");
                 }
             } else {
+                MaterialCardView cardView = quickViewHolder.getView(R.id.card);
+                cardView.setCardBackgroundColor(appInfo.getCardColor());
+                quickViewHolder.setGone(R.id.iv_add, true);
                 quickViewHolder.setGone(R.id.tv_name, false);
+                quickViewHolder.setGone(R.id.app_icon, appInfo.isBanner());
+                quickViewHolder.setGone(R.id.app_banner, !appInfo.isBanner());
+                Drawable drawable;
+                ImageView imageView;
                 if (appInfo.isBanner()) {
-                    quickViewHolder.setGone(R.id.app_icon, false);
-                    Drawable drawable = ToolUtils.getBase64ToDrawable(appInfo.getAppBannerBase64());
-                    ImageView imageView = quickViewHolder.getView(R.id.app_banner);
-                    Glide.with(getContext()).load(drawable).into(imageView);
+                    imageView = quickViewHolder.getView(R.id.app_banner);
+                    drawable = ToolUtils.getBase64ToDrawable(appInfo.getAppBannerBase64());
                 } else {
-                    quickViewHolder.setGone(R.id.app_banner, false);
-                    MaterialCardView cardView = quickViewHolder.getView(R.id.card);
-                    cardView.setCardBackgroundColor(appInfo.getCardColor());
-
-                    ImageView imageView = quickViewHolder.getView(R.id.app_icon);
-                    Drawable drawable = ToolUtils.getBase64ToDrawable(appInfo.getAppIconBase64());
-                    Glide.with(getContext()).load(drawable).into(imageView);
+                    imageView = quickViewHolder.getView(R.id.app_icon);
+                    drawable = ToolUtils.getBase64ToDrawable(appInfo.getAppIconBase64());
                 }
+                Glide.with(getContext()).load(drawable).into(imageView);
                 quickViewHolder.setText(R.id.tv_name, appInfo.getName());
             }
         }
