@@ -51,8 +51,11 @@ import com.owen.tvrecyclerview.widget.V7GridLayoutManager;
 import com.owen.tvrecyclerview.widget.V7LinearLayoutManager;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity implements ViewAnimateListener {
     private static final String TAG = "MainActivity";
@@ -95,7 +98,6 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         initListener();
     }
 
-    private int movePosition = 0;
 
     private void initView() {
         ImageView wallPager = findViewById(R.id.wall_pager);
@@ -124,53 +126,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
 
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    private void initData() {
-        appDataBase = AppDataBase.getInstance(this);
-        favoriteAppInfoDao = appDataBase.getFavoriteAppInfoDao();
-        topSettingsAdapter = new SettingsIconAdapter();
-        appListAdapter = new AppIconAdapter();
-        favoriteAppsAdapter = new AppIconAdapter();
-
-        topSettingsBar.setAdapter(topSettingsAdapter);
-        appListGrid.setAdapter(appListAdapter);
-        favoriteAppsGrid.setAdapter(favoriteAppsAdapter);
-
-        topSettingsAdapter.setItems(List.of(TopSettingsIcons.values()));
-
-        new Thread(() -> {
-            List<AppInfo> tempAllApps = AppsUtils.getAppsInfo(this);
-            getAllAppsBanner(tempAllApps);
-            allApps = Lists.newArrayList(Iterables.filter(tempAllApps, AppAllInfo -> {
-                if (AppAllInfo != null) {
-                    return !AppAllInfo.isSystem();
-                }
-                return false;
-            }));
-            systemApps = Lists.newArrayList(Iterables.filter(tempAllApps, AppAllInfo -> AppAllInfo != null && AppAllInfo.isSystem()));
-            Iterator<AppInfo> iterator = systemApps.iterator();
-            while (iterator.hasNext()) {
-                AppInfo next = iterator.next();
-                boolean appLaunchable = ToolUtils.isAppLaunchable(this, next.getPackageName());
-                if (!appLaunchable) {
-                    iterator.remove();
-                }
-            }
-            allApps.add(allApps.size(), ToolUtils.getEmptyAppInfo("system"));
-            List<AppInfo> favoriteAppInfos = favoriteAppInfoDao.getAllFavoriteAppInfo();
-            favoriteApps.addAll(favoriteAppInfos);
-            favoriteApps.add(favoriteApps.size(), ToolUtils.getEmptyAppInfo("add"));
-            Log.d(TAG, "initData: 数据处理完成");
-            runOnUiThread(() -> {
-                Log.d(TAG, "initData: 更新UI");
-                appListAdapter.setItems(allApps);
-                appListAdapter.notifyDataSetChanged();
-                favoriteAppsAdapter.setItems(favoriteApps);
-                favoriteAppsAdapter.notifyDataSetChanged();
-                favoriteAppsGrid.requestFocus();
-            });
-        }).start();
-    }
+    private final Executor dbExecutor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onStart() {
@@ -278,26 +234,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             }
         });
     }
-
-    private void addFavoriteApp(@NonNull BaseQuickAdapter<AppInfo, ?> baseQuickAdapter, int i, AppIconAdapter favoriteAppsAdapter) {
-        AppInfo dialogAppAllInfo = baseQuickAdapter.getItem(i);
-        List<AppInfo> items = favoriteAppsAdapter.getItems();
-        if (!dialogAppAllInfo.getPackageName().isEmpty()) {
-            ArrayList<AppInfo> appInfoArrayList = Lists.newArrayList(Iterables.filter(items, appInfo -> {
-                if (appInfo != null) {
-                    return appInfo.getPackageName().equals(dialogAppAllInfo.getPackageName());
-                }
-                return false;
-            }));
-            if (appInfoArrayList.isEmpty()) {
-                int itemCount = favoriteAppsAdapter.getItemCount();
-                favoriteAppsAdapter.add(itemCount - 1, dialogAppAllInfo);
-                new Thread(() -> favoriteAppInfoDao.insert(dialogAppAllInfo)).start();
-            } else {
-                Toast.makeText(this, dialogAppAllInfo.getName() + " 已添加", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
+    private int movePosition = 0;
 
 
     public void showMaterialAlertDialog(Context context, String titleName, View rootView) {
@@ -379,24 +316,132 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                 }).show();
         return true;
     }
+    private int moveToPosition = 0;
+
+    @SuppressLint("NotifyDataSetChanged")
+    private void initData() {
+        appDataBase = AppDataBase.getInstance(this);
+        favoriteAppInfoDao = appDataBase.getFavoriteAppInfoDao();
+        topSettingsAdapter = new SettingsIconAdapter();
+        appListAdapter = new AppIconAdapter();
+        favoriteAppsAdapter = new AppIconAdapter();
+
+        topSettingsBar.setAdapter(topSettingsAdapter);
+        appListGrid.setAdapter(appListAdapter);
+        favoriteAppsGrid.setAdapter(favoriteAppsAdapter);
+
+        topSettingsAdapter.setItems(List.of(TopSettingsIcons.values()));
+
+        new Thread(() -> {
+            List<AppInfo> tempAllApps = AppsUtils.getAppsInfo(this);
+            getAllAppsBanner(tempAllApps);
+            allApps = Lists.newArrayList(Iterables.filter(tempAllApps, AppAllInfo -> {
+                if (AppAllInfo != null) {
+                    return !AppAllInfo.isSystem();
+                }
+                return false;
+            }));
+            systemApps = Lists.newArrayList(Iterables.filter(tempAllApps, AppAllInfo -> AppAllInfo != null && AppAllInfo.isSystem()));
+            Iterator<AppInfo> iterator = systemApps.iterator();
+            while (iterator.hasNext()) {
+                AppInfo next = iterator.next();
+                boolean appLaunchable = ToolUtils.isAppLaunchable(this, next.getPackageName());
+                if (!appLaunchable) {
+                    iterator.remove();
+                }
+            }
+            allApps.add(allApps.size(), ToolUtils.getEmptyAppInfo("system"));
+            List<AppInfo> favoriteAppInfos = favoriteAppInfoDao.getAllFavoriteAppInfo();
+            Collections.sort(favoriteAppInfos, (o1, o2) -> {
+                int index1 = o1.getSortIndex();
+                int index2 = o2.getSortIndex();
+                return Integer.compare(index1, index2);
+            });
+            favoriteApps.addAll(favoriteAppInfos);
+            favoriteApps.add(favoriteApps.size(), ToolUtils.getEmptyAppInfo("add"));
+            Log.d(TAG, "initData: 数据处理完成");
+            runOnUiThread(() -> {
+                Log.d(TAG, "initData: 更新UI");
+                appListAdapter.setItems(allApps);
+                appListAdapter.notifyDataSetChanged();
+                favoriteAppsAdapter.setItems(favoriteApps);
+                favoriteAppsAdapter.notifyDataSetChanged();
+                favoriteAppsGrid.requestFocus();
+            });
+        }).start();
+    }
+
+    private void addFavoriteApp(@NonNull BaseQuickAdapter<AppInfo, ?> baseQuickAdapter, int i, AppIconAdapter favoriteAppsAdapter) {
+        AppInfo adapterItem = baseQuickAdapter.getItem(i);
+        List<AppInfo> items = favoriteAppsAdapter.getItems();
+        if (!adapterItem.getPackageName().isEmpty()) {
+            ArrayList<AppInfo> appInfoArrayList = Lists.newArrayList(Iterables.filter(items, appInfo -> {
+                if (appInfo != null) {
+                    return appInfo.getPackageName().equals(adapterItem.getPackageName());
+                }
+                return false;
+            }));
+            if (appInfoArrayList.isEmpty()) {
+                int itemCount = favoriteAppsAdapter.getItemCount();
+                favoriteAppsAdapter.add(itemCount - 1, adapterItem);
+                adapterItem.setSortIndex(itemCount - 1);
+                new Thread(() -> favoriteAppInfoDao.insert(adapterItem)).start();
+            } else {
+                Toast.makeText(this, adapterItem.getName() + " 已添加", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (isMoveApp) {
             if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
                 if (movePosition > 0) {
-                    favoriteAppsAdapter.move(movePosition, movePosition - 1);
-                    movePosition--;
+                    moveToPosition = movePosition - 1;
+                    moveItem();
                 }
             } else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-                if (movePosition < favoriteApps.size() - 1) {
-                    favoriteAppsAdapter.move(movePosition, movePosition + 1);
-                    movePosition++;
+                if (movePosition < favoriteApps.size() - 2) {
+                    moveToPosition = movePosition + 1;
+                    moveItem();
                 }
             }
             return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    private void moveItem() {
+        if (movePosition == moveToPosition) return;
+
+        List<AppInfo> list = favoriteAppsAdapter.getItems();
+
+        AppInfo fromItem = list.get(movePosition);
+        AppInfo toItem = list.get(moveToPosition);
+
+        // 1. 交换 sortIndex（以 UI 顺序为准）
+        int fromIndex = fromItem.getSortIndex();
+        fromItem.setSortIndex(toItem.getSortIndex());
+        toItem.setSortIndex(fromIndex);
+
+        // 2. 交换列表顺序
+        Collections.swap(list, movePosition, moveToPosition);
+
+        // 3. 通知 RecyclerView
+        favoriteAppsAdapter.notifyItemMoved(movePosition, moveToPosition);
+
+        // 4. 修正 position
+        movePosition = moveToPosition;
+
+        // 6. 串行更新数据库（防抖）
+        updateSortIndexAsync(fromItem, toItem);
+    }
+
+    private void updateSortIndexAsync(AppInfo a, AppInfo b) {
+        dbExecutor.execute(() -> {
+            favoriteAppInfoDao.update(a);
+            favoriteAppInfoDao.update(b);
+        });
     }
 
     @SuppressLint("SetTextI18n")
