@@ -40,9 +40,11 @@ public class ViewAnimationShake implements TvRecyclerView.OnInBorderKeyEventList
 
         switch (direction) {
             case View.FOCUS_UP:
-                return viewAnimateListener.animateType(View.FOCUS_UP, gridType);
+                if (viewAnimateListener != null)
+                    return viewAnimateListener.animateType(View.FOCUS_UP, gridType);
             case View.FOCUS_DOWN:
-                return viewAnimateListener.animateType(View.FOCUS_DOWN, gridType);
+                if (viewAnimateListener != null)
+                    return viewAnimateListener.animateType(View.FOCUS_DOWN, gridType);
             case View.FOCUS_LEFT:
             case View.FOCUS_RIGHT:
                 boolean handled = false;

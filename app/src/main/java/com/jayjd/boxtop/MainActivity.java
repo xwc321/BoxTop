@@ -3,6 +3,7 @@ package com.jayjd.boxtop;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -98,6 +99,9 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             TopSettingsIcons item = baseQuickAdapter.getItem(i);
             if (item == TopSettingsIcons.WIFI_ICON) {
                 NetworkUtils.openWirelessSettings();
+            }
+            if (item == TopSettingsIcons.WALL_PAGER_ICON) {
+                startActivity(new Intent(this, WallPagerActivity.class));
             }
         });
         appListAdapter.setOnItemLongClickListener((parent, view, position) -> {
