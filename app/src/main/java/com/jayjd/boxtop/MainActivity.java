@@ -95,99 +95,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         initListener();
     }
 
-    private void initListener() {
-        topSettingsAdapter.setOnItemClickListener((baseQuickAdapter, view, i) -> {
-            TopSettingsIcons item = baseQuickAdapter.getItem(i);
-            if (item == TopSettingsIcons.WIFI_ICON) {
-                NetworkUtils.openWirelessSettings();
-            }
-            if (item == TopSettingsIcons.WALL_PAGER_ICON) {
-                startActivity(new Intent(this, WallPagerActivity.class));
-            }
-        });
-        appListAdapter.setOnItemLongClickListener((parent, view, position) -> {
-            Log.d("MainActivity", "onItemChildLongClick position = " + position);
-            return showAppSettingsDialog(parent, position);
-        });
-        appListAdapter.setOnItemClickListener((parent, view, position) -> {
-            Log.d("MainActivity", "onItemClick position = " + position);
-            AppInfo appInfo = parent.getItem(position);
-            if (appInfo.getPackageName().isEmpty()) {
-                View inflate = LayoutInflater.from(this).inflate(R.layout.activity_dialog_all_app, null);
-                TvRecyclerView allDialogGrid = inflate.findViewById(R.id.all_dialog_grid);
-                allDialogGrid.setLayoutManager(new V7GridLayoutManager(this, 4));
-                AppIconAdapter dialogAppIconAdapter = new AppIconAdapter();
-                allDialogGrid.setAdapter(dialogAppIconAdapter);
-                dialogAppIconAdapter.setItems(systemApps);
-                dialogAppIconAdapter.setOnItemLongClickListener((baseQuickAdapter, view2, i) -> {
-                    Log.d("MainActivity", "onItemChildLongClick position = " + i);
-                    return showAppSettingsDialog(baseQuickAdapter, i);
-                });
-                dialogAppIconAdapter.setOnItemClickListener((baseQuickAdapter1, view1, i1) -> {
-                    AppInfo item = baseQuickAdapter1.getItem(i1);
-                    if (item.getPackageName().isEmpty()) {
-                        return;
-                    }
-                    AppUtils.launchApp(item.getPackageName());
-                });
-                allDialogGrid.setOnItemListener(new TvOnItemListener());
-                allDialogGrid.requestFocus();
-                allAppsContainer.setVisibility(View.INVISIBLE);
-                previewPanel.setVisibility(View.INVISIBLE);
-                showMaterialAlertDialog(this, "系统应用", inflate);
-            } else {
-                AppUtils.launchApp(appInfo.getPackageName());
-            }
-        });
-
-        favoriteAppsAdapter.setOnItemLongClickListener((baseQuickAdapter, view, position) -> {
-            Log.d("MainActivity", "onItemChildLongClick position = " + position);
-            return showAppSettingsDialog(baseQuickAdapter, position);
-        });
-        favoriteAppsAdapter.setOnItemClickListener((baseQuickAdapter, view, i) -> {
-            AppInfo item = baseQuickAdapter.getItem(i);
-            if (item.getPackageName().isEmpty()) {
-                View inflate = LayoutInflater.from(this).inflate(R.layout.activity_dialog_all_app, null);
-                TvRecyclerView allDialogGrid = inflate.findViewById(R.id.all_dialog_grid);
-                allDialogGrid.setLayoutManager(new V7GridLayoutManager(this, 2, V7GridLayoutManager.HORIZONTAL, false));
-                AppIconAdapter dialogAppIconAdapter = new AppIconAdapter();
-                allDialogGrid.setAdapter(dialogAppIconAdapter);
-                dialogAppIconAdapter.setItems(allApps);
-                dialogAppIconAdapter.setOnItemClickListener((baseQuickAdapter1, view1, i1) -> addTopAppAllInfo(baseQuickAdapter1, i1, favoriteAppsAdapter));
-                allDialogGrid.setOnItemListener(new TvOnItemListener());
-                allDialogGrid.requestFocus();
-                showMaterialAlertDialog(this, "所有应用", inflate);
-            } else {
-                AppUtils.launchApp(item.getPackageName());
-            }
-        });
-
-        appListGrid.setOnItemListener(new TvOnItemListener());
-        favoriteAppsGrid.setOnItemListener(new TvRecyclerView.OnItemListener() {
-            @Override
-            public void onItemPreSelected(TvRecyclerView parent, View itemView, int position) {
-                Log.d("MainActivity", "onItemPreSelected position = " + position);
-                ToolUtils.endAnimation(itemView);
-            }
-
-            @Override
-            public void onItemSelected(TvRecyclerView parent, View itemView, int position) {
-                Log.d("MainActivity", "onItemSelected position = " + position);
-                ToolUtils.startAnimation(itemView);
-                AppIconAdapter adapter = (AppIconAdapter) parent.getAdapter();
-                if (adapter != null) {
-                    AppInfo item = adapter.getItem(position);
-                    if (!item.getPackageName().isEmpty()) {
-                        showPreview(item);
-                    }
-                }
-            }
-
-            @Override
-            public void onItemClick(TvRecyclerView parent, View itemView, int position) {
-            }
-        });
-    }
+    private int movePosition = 0;
 
     private void initView() {
         ImageView wallPager = findViewById(R.id.wall_pager);
@@ -273,36 +181,102 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         });
     }
 
-
-    private boolean showAppSettingsDialog(BaseQuickAdapter<AppInfo, ?> parent, int position) {
-        AppInfo appInfo = parent.getItem(position);
-        if (appInfo.getPackageName().isEmpty()) {
-            return false;
-        }
-        new MaterialAlertDialogBuilder(this) //
-                .setTitle("操作") //
-                .setItems(new CharSequence[]{"启动", "查看", "卸载", "删除", "移动"}, (dialog, which) -> {
-                    Log.d("MainActivity", "onClick position = " + position);
-                    if (which == 0) {
-                        AppUtils.launchApp(appInfo.getPackageName());
-                    } else if (which == 1) {
-                        AppUtils.launchAppDetailsSettings(appInfo.getPackageName());
-                    } else if (which == 2) {
-                        if (appInfo.isSystem()) {
-                            Toast.makeText(this, "系统应用无法卸载", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        new MaterialAlertDialogBuilder(this).setTitle("卸载应用").setMessage("确定要卸载「" + appInfo.getName() + "」吗？").setPositiveButton("卸载", (d, w) -> {
-                            ToolUtils.uninstallApp(this, appInfo.getPackageName());
-                        }).setNegativeButton("取消", null).show();
-                    } else if (which == 3) {
-                        favoriteAppsAdapter.remove(appInfo);
-                        new Thread(() -> favoriteAppInfoDao.delete(appInfo)).start();
-                    } else if (which == 4) {
-                        isMoveApp = true;
+    private void initListener() {
+        topSettingsAdapter.setOnItemClickListener((baseQuickAdapter, view, i) -> {
+            TopSettingsIcons item = baseQuickAdapter.getItem(i);
+            if (item == TopSettingsIcons.WIFI_ICON) {
+                NetworkUtils.openWirelessSettings();
+            }
+            if (item == TopSettingsIcons.WALL_PAGER_ICON) {
+                startActivity(new Intent(this, WallPagerActivity.class));
+            }
+        });
+        appListAdapter.setOnItemLongClickListener((parent, view, position) -> {
+            Log.d("MainActivity", "onItemChildLongClick position = " + position);
+            return showAppSettingsDialog(parent, position);
+        });
+        appListAdapter.setOnItemClickListener((parent, view, position) -> {
+            Log.d("MainActivity", "onItemClick position = " + position);
+            AppInfo appInfo = parent.getItem(position);
+            if (appInfo.getPackageName().isEmpty()) {
+                View inflate = LayoutInflater.from(this).inflate(R.layout.activity_dialog_all_app, null);
+                TvRecyclerView allDialogGrid = inflate.findViewById(R.id.all_dialog_grid);
+                allDialogGrid.setLayoutManager(new V7GridLayoutManager(this, 4));
+                AppIconAdapter dialogAppIconAdapter = new AppIconAdapter();
+                allDialogGrid.setAdapter(dialogAppIconAdapter);
+                dialogAppIconAdapter.setItems(systemApps);
+                dialogAppIconAdapter.setOnItemLongClickListener((baseQuickAdapter, view2, i) -> {
+                    Log.d("MainActivity", "onItemChildLongClick position = " + i);
+                    return showAppSettingsDialog(baseQuickAdapter, i);
+                });
+                dialogAppIconAdapter.setOnItemClickListener((baseQuickAdapter1, view1, i1) -> {
+                    AppInfo item = baseQuickAdapter1.getItem(i1);
+                    if (item.getPackageName().isEmpty()) {
+                        return;
                     }
-                }).show();
-        return true;
+                    AppUtils.launchApp(item.getPackageName());
+                });
+                allDialogGrid.setOnItemListener(new TvOnItemListener());
+                allDialogGrid.requestFocus();
+                allAppsContainer.setVisibility(View.INVISIBLE);
+                previewPanel.setVisibility(View.INVISIBLE);
+                showMaterialAlertDialog(this, "系统应用", inflate);
+            } else {
+                AppUtils.launchApp(appInfo.getPackageName());
+            }
+        });
+
+        favoriteAppsAdapter.setOnItemLongClickListener((baseQuickAdapter, view, position) -> {
+            Log.d("MainActivity", "onItemChildLongClick position = " + position);
+            return showAppSettingsDialog(baseQuickAdapter, position);
+        });
+        favoriteAppsAdapter.setOnItemClickListener((baseQuickAdapter, view, i) -> {
+            if (isMoveApp) {
+                isMoveApp = false;
+                return;
+            }
+            AppInfo item = baseQuickAdapter.getItem(i);
+            if (item.getPackageName().isEmpty()) {
+                View inflate = LayoutInflater.from(this).inflate(R.layout.activity_dialog_all_app, null);
+                TvRecyclerView allDialogGrid = inflate.findViewById(R.id.all_dialog_grid);
+                allDialogGrid.setLayoutManager(new V7GridLayoutManager(this, 2, V7GridLayoutManager.HORIZONTAL, false));
+                AppIconAdapter dialogAppIconAdapter = new AppIconAdapter();
+                allDialogGrid.setAdapter(dialogAppIconAdapter);
+                dialogAppIconAdapter.setItems(allApps);
+                dialogAppIconAdapter.setOnItemClickListener((baseQuickAdapter1, view1, i1) -> addTopAppAllInfo(baseQuickAdapter1, i1, favoriteAppsAdapter));
+                allDialogGrid.setOnItemListener(new TvOnItemListener());
+                allDialogGrid.requestFocus();
+                showMaterialAlertDialog(this, "所有应用", inflate);
+            } else {
+                AppUtils.launchApp(item.getPackageName());
+            }
+        });
+
+        appListGrid.setOnItemListener(new TvOnItemListener());
+        favoriteAppsGrid.setOnItemListener(new TvRecyclerView.OnItemListener() {
+            @Override
+            public void onItemPreSelected(TvRecyclerView parent, View itemView, int position) {
+                Log.d("MainActivity", "onItemPreSelected position = " + position);
+                ToolUtils.endAnimation(itemView);
+            }
+
+            @Override
+            public void onItemSelected(TvRecyclerView parent, View itemView, int position) {
+                Log.d("MainActivity", "onItemSelected position = " + position);
+                ToolUtils.startAnimation(itemView);
+                AppIconAdapter adapter = (AppIconAdapter) parent.getAdapter();
+                if (adapter != null) {
+                    AppInfo item = adapter.getItem(position);
+                    if (!item.getPackageName().isEmpty()) {
+                        showPreview(item);
+                    }
+                }
+            }
+
+            @Override
+            public void onItemClick(TvRecyclerView parent, View itemView, int position) {
+            }
+        });
     }
 
     private void addTopAppAllInfo(@NonNull BaseQuickAdapter<AppInfo, ?> baseQuickAdapter, int i, AppIconAdapter topAppAdapter) {
@@ -371,6 +345,57 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                 }
             }
         }
+    }
+
+    private boolean showAppSettingsDialog(BaseQuickAdapter<AppInfo, ?> parent, int position) {
+        AppInfo appInfo = parent.getItem(position);
+        if (appInfo.getPackageName().isEmpty()) {
+            return false;
+        }
+        new MaterialAlertDialogBuilder(this) //
+                .setTitle("操作") //
+                .setItems(new CharSequence[]{"启动", "查看", "卸载", "删除", "移动"}, (dialog, which) -> {
+                    Log.d("MainActivity", "onClick position = " + position);
+                    if (which == 0) {
+                        AppUtils.launchApp(appInfo.getPackageName());
+                    } else if (which == 1) {
+                        AppUtils.launchAppDetailsSettings(appInfo.getPackageName());
+                    } else if (which == 2) {
+                        if (appInfo.isSystem()) {
+                            Toast.makeText(this, "系统应用无法卸载", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        new MaterialAlertDialogBuilder(this).setTitle("卸载应用").setMessage("确定要卸载「" + appInfo.getName() + "」吗？").setPositiveButton("卸载", (d, w) -> {
+                            ToolUtils.uninstallApp(this, appInfo.getPackageName());
+                        }).setNegativeButton("取消", null).show();
+                    } else if (which == 3) {
+                        favoriteAppsAdapter.remove(appInfo);
+                        new Thread(() -> favoriteAppInfoDao.delete(appInfo)).start();
+                    } else if (which == 4) {
+                        isMoveApp = true;
+                        movePosition = position;
+                    }
+                }).show();
+        return true;
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (isMoveApp) {
+            if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+                if (movePosition > 0) {
+                    favoriteAppsAdapter.move(movePosition, movePosition - 1);
+                    movePosition--;
+                }
+            } else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                if (movePosition < favoriteApps.size() - 1) {
+                    favoriteAppsAdapter.move(movePosition, movePosition + 1);
+                    movePosition++;
+                }
+            }
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
     @SuppressLint("SetTextI18n")
