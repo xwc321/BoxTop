@@ -56,7 +56,6 @@ import com.jayjd.boxtop.listeners.ViewAnimateListener;
 import com.jayjd.boxtop.listeners.ViewAnimationShake;
 import com.jayjd.boxtop.utils.AppsUtils;
 import com.jayjd.boxtop.utils.ToolUtils;
-import com.jayjd.boxtop.utils.TvProviderContentHelper;
 import com.owen.tvrecyclerview.widget.TvRecyclerView;
 import com.owen.tvrecyclerview.widget.V7GridLayoutManager;
 import com.owen.tvrecyclerview.widget.V7LinearLayoutManager;
@@ -102,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-//        initDefaleHome();
+        initDefauleHome();
         initHDMI();
         initView();
         initData();
@@ -261,14 +260,6 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             public void onItemSelected(TvRecyclerView parent, View itemView, int position) {
                 Log.d("MainActivity", "onItemSelected position = " + position);
                 ToolUtils.startAnimation(itemView);
-                AppInfo item = favoriteAppsAdapter.getItem(position);
-                if (item.getPackageName().isEmpty()) return;
-                TvProviderContentHelper.test(itemView.getContext());
-//                List<TvProviderContentHelper.ChannelInfo> channelsByInputId = TvProviderContentHelper.getChannelsByInputId(itemView.getContext(), item.getPackageName());
-//                Log.d("MainActivity", "onItemSelected channelsByInputId = " + channelsByInputId.size());
-//                for (TvProviderContentHelper.ChannelInfo channelInfo : channelsByInputId) {
-//                    Log.d("MainActivity", "onItemSelected channelInfo = " + channelInfo);
-//                }
             }
 
             @Override
@@ -534,6 +525,9 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         if (keyCode == KeyEvent.KEYCODE_MENU) {
             showSettings();
             return true;
+        } else if (keyCode == KeyEvent.KEYCODE_BACK) {
+            finish();
+            return true;
         }
 
         return super.onKeyDown(keyCode, event);
@@ -611,7 +605,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     }
 
 
-    private void initDefaleHome() {
+    private void initDefauleHome() {
         boolean defaultHome = ToolUtils.isDefaultHome(this);
         Log.d("MainActivity", "defaultHome = " + defaultHome);
         if (!defaultHome) {
