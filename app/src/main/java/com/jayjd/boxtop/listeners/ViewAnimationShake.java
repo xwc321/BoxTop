@@ -18,6 +18,13 @@ public class ViewAnimationShake implements TvRecyclerView.OnInBorderKeyEventList
     private final ViewAnimateListener viewAnimateListener;
     private Animation mShakeX;
 
+    public ViewAnimationShake(TvRecyclerView tvRecyclerView, Context context) {
+        this.tvRecyclerView = tvRecyclerView;
+        this.context = context;
+        viewAnimateListener = null;
+        gridType = 0;
+    }
+
     public ViewAnimationShake(TvRecyclerView tvRecyclerView, Context context, int gridType, ViewAnimateListener viewAnimateListener) {
         this.tvRecyclerView = tvRecyclerView;
         this.context = context;

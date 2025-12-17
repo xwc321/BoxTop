@@ -33,6 +33,7 @@ import com.blankj.utilcode.util.ResourceUtils;
 import com.blankj.utilcode.util.ScreenUtils;
 import com.bumptech.glide.Glide;
 import com.chad.library.adapter4.BaseQuickAdapter;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -41,6 +42,7 @@ import com.jayjd.boxtop.adapter.SettingsIconAdapter;
 import com.jayjd.boxtop.dao.FavoriteAppInfoDao;
 import com.jayjd.boxtop.database.AppDataBase;
 import com.jayjd.boxtop.entity.AppInfo;
+import com.jayjd.boxtop.enums.PreviewSettings;
 import com.jayjd.boxtop.enums.TopSettingsIcons;
 import com.jayjd.boxtop.listeners.TvOnItemListener;
 import com.jayjd.boxtop.listeners.ViewAnimateListener;
@@ -52,6 +54,7 @@ import com.owen.tvrecyclerview.widget.V7GridLayoutManager;
 import com.owen.tvrecyclerview.widget.V7LinearLayoutManager;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -259,7 +262,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     private int movePosition = 0;
 
 
-    public void showMaterialAlertDialog(Context context, String titleName, View rootView) {
+    public Dialog showMaterialAlertDialog(Context context, String titleName, View rootView) {
         Dialog dialog = new Dialog(context, R.style.CustomDialogTheme);
         dialog.setContentView(rootView);
         dialog.setOnKeyListener((dialog1, keyCode, event) -> {
@@ -274,6 +277,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             return false;
         });
         dialog.show();
+        return dialog;
     }
 
     private void getAllAppsBanner(List<AppInfo> appsInfo) {
@@ -308,35 +312,78 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     }
 
     private boolean showAppSettingsDialog(BaseQuickAdapter<AppInfo, ?> parent, View view, int position) {
+        previewPanel.setVisibility(View.INVISIBLE);
         AppInfo appInfo = parent.getItem(position);
         if (appInfo.getPackageName().isEmpty()) {
             return false;
         }
-        new MaterialAlertDialogBuilder(this) //
-                .setTitle("操作") //
-                .setItems(new CharSequence[]{"启动", "查看", "卸载", "删除", "移动"}, (dialog, which) -> {
-                    Log.d("MainActivity", "onClick position = " + position);
-                    if (which == 0) {
-                        AppUtils.launchApp(appInfo.getPackageName());
-                    } else if (which == 1) {
-                        AppUtils.launchAppDetailsSettings(appInfo.getPackageName());
-                    } else if (which == 2) {
-                        if (appInfo.isSystem()) {
-                            Toast.makeText(this, "系统应用无法卸载", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        new MaterialAlertDialogBuilder(this).setTitle("卸载应用").setMessage("确定要卸载「" + appInfo.getName() + "」吗？").setPositiveButton("卸载", (d, w) -> {
-                            ToolUtils.uninstallApp(this, appInfo.getPackageName());
-                        }).setNegativeButton("取消", null).show();
-                    } else if (which == 3) {
-                        favoriteAppsAdapter.remove(appInfo);
-                        new Thread(() -> favoriteAppInfoDao.delete(appInfo)).start();
-                    } else if (which == 4) {
-                        isMoveApp = true;
-                        movePosition = position;
-                        ToolUtils.startAnimation(view);
+        View inflate = LayoutInflater.from(this).inflate(R.layout.activity_apps_settings, null);
+        Dialog dialog = showMaterialAlertDialog(this, "应用设置", inflate);
+
+        MaterialCardView card = inflate.findViewById(R.id.card);
+        card.setCardBackgroundColor(appInfo.getCardColor());
+        Drawable drawable;
+        ImageView imageView;
+        if (appInfo.isBanner()) {
+            inflate.findViewById(R.id.preview_app_icon).setVisibility(View.GONE);
+            imageView = inflate.findViewById(R.id.preview_banner_icon);
+            imageView.setVisibility(View.VISIBLE);
+            drawable = ToolUtils.getBase64ToDrawable(appInfo.getAppBannerBase64());
+        } else {
+            inflate.findViewById(R.id.preview_banner_icon).setVisibility(View.GONE);
+            imageView = inflate.findViewById(R.id.preview_app_icon);
+            imageView.setVisibility(View.VISIBLE);
+            drawable = ToolUtils.getBase64ToDrawable(appInfo.getAppIconBase64());
+        }
+        Glide.with(this).load(drawable).into(imageView);
+        TextView previewTitle = inflate.findViewById(R.id.preview_title);
+        previewTitle.setText(appInfo.getName());
+        TextView previewDesc = inflate.findViewById(R.id.preview_desc);
+        previewDesc.setText(appInfo.getPackageName());
+
+        TvRecyclerView previewSettingsRecyclerview = inflate.findViewById(R.id.preview_settings_recyclerview);
+
+        previewSettingsRecyclerview.setOnInBorderKeyEventListener(new ViewAnimationShake(previewSettingsRecyclerview, this));
+        previewSettingsRecyclerview.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.VERTICAL, false));
+        previewSettingsRecyclerview.setOnItemListener(new TvOnItemListener());
+        PreviewSettingsAdapter previewSettingsAdapter = new PreviewSettingsAdapter();
+        previewSettingsRecyclerview.setAdapter(previewSettingsAdapter);
+
+        previewSettingsAdapter.setItems(Arrays.asList(PreviewSettings.values()));
+        previewSettingsRecyclerview.requestFocus();
+        previewSettingsAdapter.setOnItemClickListener((baseQuickAdapter, view1, which) -> {
+            PreviewSettings previewSettings = baseQuickAdapter.getItem(which);
+            switch (previewSettings) {
+                case START:
+                    AppUtils.launchApp(appInfo.getPackageName());
+                    dialog.dismiss();
+                    break;
+                case VIEW:
+                    AppUtils.launchAppDetailsSettings(appInfo.getPackageName());
+                    dialog.dismiss();
+                    break;
+                case MOVE:
+                    isMoveApp = true;
+                    movePosition = position;
+                    dialog.dismiss();
+                    break;
+                case DELETE:
+                    favoriteAppsAdapter.notifyItemRemoved(position);
+                    new Thread(() -> favoriteAppInfoDao.delete(appInfo)).start();
+                    dialog.dismiss();
+                    break;
+                case UNINSTALL:
+                    if (appInfo.isSystem()) {
+                        Toast.makeText(this, "系统应用无法卸载", Toast.LENGTH_SHORT).show();
+                        return;
                     }
-                }).show();
+                    new MaterialAlertDialogBuilder(this).setTitle("卸载应用").setMessage("确定要卸载「" + appInfo.getName() + "」吗？").setPositiveButton("卸载", (d, w) -> {
+                        ToolUtils.uninstallApp(this, appInfo.getPackageName());
+                    }).setNegativeButton("取消", null).show();
+                    dialog.dismiss();
+                    break;
+            }
+        });
         return true;
     }
 
@@ -437,7 +484,16 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             }
             return true;
         }
+        if (keyCode == KeyEvent.KEYCODE_MENU) {
+            showSettings();
+            return true;
+        }
+
         return super.onKeyDown(keyCode, event);
+    }
+
+    private void showSettings() {
+        Toast.makeText(this, "打开软件设置", Toast.LENGTH_SHORT).show();
     }
 
     private void moveItem() {
