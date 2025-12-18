@@ -44,12 +44,14 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
 import com.jayjd.boxtop.adapter.AppIconAdapter;
 import com.jayjd.boxtop.adapter.PreviewSettingsAdapter;
 import com.jayjd.boxtop.adapter.SettingsIconAdapter;
 import com.jayjd.boxtop.dao.FavoriteAppInfoDao;
 import com.jayjd.boxtop.database.AppDataBase;
 import com.jayjd.boxtop.entity.AppInfo;
+import com.jayjd.boxtop.entity.HotSearchEntity;
 import com.jayjd.boxtop.enums.PreviewSettings;
 import com.jayjd.boxtop.enums.TopSettingsIcons;
 import com.jayjd.boxtop.listeners.PackageInfoCallback;
@@ -63,6 +65,9 @@ import com.jayjd.boxtop.utils.AppsUtils;
 import com.jayjd.boxtop.utils.NetworkMonitor;
 import com.jayjd.boxtop.utils.SPUtils;
 import com.jayjd.boxtop.utils.ToolUtils;
+import com.lzy.okgo.OkGo;
+import com.lzy.okgo.callback.StringCallback;
+import com.lzy.okgo.model.Response;
 import com.owen.tvrecyclerview.widget.TvRecyclerView;
 import com.owen.tvrecyclerview.widget.V7GridLayoutManager;
 import com.owen.tvrecyclerview.widget.V7LinearLayoutManager;
@@ -672,6 +677,41 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                 favoriteAppsGrid.requestFocus();
             });
         }).start();
+
+        OkGo.<String>get("https://node.video.qq.com/x/api/hot_search").execute(new StringCallback() {
+            @Override
+            public void onSuccess(Response<String> response) {
+                try {
+                    if (response.isSuccessful()) {
+                        String body = response.body();
+                        Log.d(TAG, "onSuccess: " + body);
+                        HotSearchEntity hotSearchEntity = new Gson().fromJson(body, HotSearchEntity.class);
+                        if (hotSearchEntity != null) {
+                            HotSearchEntity.DataBean data = hotSearchEntity.getData();
+                            if (data.getErrCode() == 0) {
+                                HotSearchEntity.DataBean.MapResultBean mapResult = data.getMapResult();
+                                HotSearchEntity.DataBean.MapResultBean._$0Bean mapResult_$0 = mapResult.get_$0();
+                                String channelTitle = mapResult_$0.getChannelTitle();
+                                List<HotSearchEntity.DataBean.MapResultBean._$0Bean.ListInfoBean> listInfo = mapResult_$0.getListInfo();
+                                for (HotSearchEntity.DataBean.MapResultBean._$0Bean.ListInfoBean listInfoBean : listInfo) {
+                                    Log.d(TAG, "onSuccess: " + channelTitle + " " + listInfoBean.getTitle());
+                                }
+                                return;
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+                Toast.makeText(MainActivity.this, "获取失败", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(Response<String> response) {
+                super.onError(response);
+                Toast.makeText(MainActivity.this, "获取异常", Toast.LENGTH_SHORT).show();
+            }
+        });
+
     }
 
     private void addFavoriteApp(@NonNull BaseQuickAdapter<AppInfo, ?> baseQuickAdapter, int i, AppIconAdapter favoriteAppsAdapter) {
