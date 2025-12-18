@@ -1,5 +1,6 @@
 package com.jayjd.boxtop;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
@@ -27,10 +28,8 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresPermission;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.palette.graphics.Palette;
 
 import com.blankj.utilcode.util.AppUtils;
@@ -102,6 +101,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     FavoriteAppInfoDao favoriteAppInfoDao;
 
     private final UsbBroadcastReceiver usbReceiver = new UsbBroadcastReceiver(new UsbDriveListener() {
+        @SuppressLint("NotifyDataSetChanged")
         @Override
         public void onUsbDriveStateChanged(boolean isConnected) {
             //        adb shell am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///storage/usb1
@@ -214,17 +214,18 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+//        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+//            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+//            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+//            return insets;
+//        });
 //        initDefaleHome();
         initView();
         initData();
         initListener();
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     private void initDeviceState() {
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -536,6 +537,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private boolean showAppSettingsDialog(BaseQuickAdapter<AppInfo, ?> parent, View view, int position) {
         previewPanel.setVisibility(View.INVISIBLE);
         AppInfo appInfo = parent.getItem(position);
@@ -590,7 +592,9 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                     movePosition = position;
                     break;
                 case DELETE:
-                    favoriteAppsAdapter.notifyItemRemoved(position);
+                    AppInfo favoriteAppInfo = favoriteAppsAdapter.getItem(position);
+                    favoriteAppsAdapter.remove(favoriteAppInfo);
+                    favoriteAppsAdapter.notifyDataSetChanged();
                     new Thread(() -> favoriteAppInfoDao.delete(appInfo)).start();
                     break;
                 case UNINSTALL:

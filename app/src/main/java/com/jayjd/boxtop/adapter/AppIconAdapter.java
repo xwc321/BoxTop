@@ -14,6 +14,7 @@ import com.chad.library.adapter4.viewholder.QuickViewHolder;
 import com.google.android.material.card.MaterialCardView;
 import com.jayjd.boxtop.R;
 import com.jayjd.boxtop.entity.AppInfo;
+import com.jayjd.boxtop.utils.SPUtils;
 import com.jayjd.boxtop.utils.ToolUtils;
 
 public class AppIconAdapter extends BaseQuickAdapter<AppInfo, QuickViewHolder> {
@@ -29,7 +30,9 @@ public class AppIconAdapter extends BaseQuickAdapter<AppInfo, QuickViewHolder> {
         if (appInfo != null) {
             MaterialCardView cardView = quickViewHolder.getView(R.id.card);
             cardView.setCardBackgroundColor(appInfo.getCardColor());
-            quickViewHolder.setText(R.id.tv_name, appInfo.getName());
+            boolean tvShow = (boolean) SPUtils.get(getContext(), "tv_show", false);
+            quickViewHolder.setText(R.id.tv_name, !tvShow ? appInfo.getName() : "");
+            quickViewHolder.setGone(R.id.tv_name, tvShow);
             if (appInfo.getPackageName().isEmpty()) {
                 quickViewHolder.setGone(R.id.app_icon, true);
                 quickViewHolder.setGone(R.id.app_banner, true);
@@ -38,7 +41,6 @@ public class AppIconAdapter extends BaseQuickAdapter<AppInfo, QuickViewHolder> {
                 Glide.with(getContext()).load(appInfo.getAppBanner()).into(imageView);
             } else {
                 quickViewHolder.setGone(R.id.iv_add, true);
-                quickViewHolder.setGone(R.id.tv_name, false);
                 quickViewHolder.setGone(R.id.app_icon, appInfo.isBanner());
                 quickViewHolder.setGone(R.id.app_banner, !appInfo.isBanner());
                 Drawable drawable;
