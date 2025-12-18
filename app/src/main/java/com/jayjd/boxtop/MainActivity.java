@@ -53,10 +53,12 @@ import com.jayjd.boxtop.database.AppDataBase;
 import com.jayjd.boxtop.entity.AppInfo;
 import com.jayjd.boxtop.enums.PreviewSettings;
 import com.jayjd.boxtop.enums.TopSettingsIcons;
+import com.jayjd.boxtop.listeners.PackageInfoCallback;
 import com.jayjd.boxtop.listeners.TvOnItemListener;
 import com.jayjd.boxtop.listeners.UsbDriveListener;
 import com.jayjd.boxtop.listeners.ViewAnimateListener;
 import com.jayjd.boxtop.listeners.ViewAnimationShake;
+import com.jayjd.boxtop.receiver.BootReceiver;
 import com.jayjd.boxtop.receiver.UsbBroadcastReceiver;
 import com.jayjd.boxtop.utils.AppsUtils;
 import com.jayjd.boxtop.utils.NetworkMonitor;
@@ -356,6 +358,26 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     }
 
     private void initListener() {
+        BootReceiver.setCallback(new PackageInfoCallback() {
+            @Override
+            public void onInstalled(String pkg) {
+                // 安装应用，更新图标
+                Log.d("BootReceiver", "安装应用 " + pkg);
+
+            }
+
+            @Override
+            public void onUninstalled(String pkg) {
+                // 卸载应用，移除图标
+                Log.d("BootReceiver", "卸载应用 " + pkg);
+            }
+
+            @Override
+            public void onUpdated(String pkg) {
+                // 更新应用，更新图标
+                Log.d("BootReceiver", "更新应用 " + pkg);
+            }
+        });
         topSettingsAdapter.setOnItemClickListener((baseQuickAdapter, view, i) -> {
             TopSettingsIcons item = baseQuickAdapter.getItem(i);
             if (item == TopSettingsIcons.WIFI_ICON || item == TopSettingsIcons.ETHERNET_ICON) {
