@@ -6,15 +6,15 @@ import lombok.Getter;
 
 @Getter
 public enum TopSettingsIcons {
-    WIFI_ICON(R.drawable.ic_wifi_24dp),
-    SETTINGS_ICON(R.drawable.ic_settings_24dp),
-    BLUETOOTH_ICON(R.drawable.ic_bluetooth_connected_24dp),
-    ETHERNET_ICON(R.drawable.ic_settings_ethernet_24dp),
-    WALL_PAGER_ICON(R.drawable.ic_settings_ethernet_24dp);
+    WIFI_ICON(R.drawable.ic_wifi_24dp), ETHERNET_ICON(R.drawable.ic_settings_ethernet_24dp), FLASH_DRIVE_ICON(R.drawable.ic_security_key_24dp), APPS_ICON(R.drawable.ic_apps_24dp), BLUETOOTH_ICON(R.drawable.ic_bluetooth_connected_24dp), SETTINGS_ICON(R.drawable.ic_settings_24dp);
 
     private final int iconId;
 
     TopSettingsIcons(int iconId) {
         this.iconId = iconId;
+    }
+
+    public static TopSettingsIcons[] getTopSettings() {
+        return new TopSettingsIcons[]{APPS_ICON, BLUETOOTH_ICON, SETTINGS_ICON};
     }
 }

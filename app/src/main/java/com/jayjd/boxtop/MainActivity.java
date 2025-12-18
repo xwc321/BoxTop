@@ -2,19 +2,17 @@ package com.jayjd.boxtop;
 
 import android.annotation.SuppressLint;
 import android.app.Dialog;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.media.tv.TvContentRating;
-import android.media.tv.TvContract;
-import android.media.tv.TvInputInfo;
-import android.media.tv.TvInputManager;
-import android.net.Uri;
-import android.os.Build;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -54,7 +52,9 @@ import com.jayjd.boxtop.enums.TopSettingsIcons;
 import com.jayjd.boxtop.listeners.TvOnItemListener;
 import com.jayjd.boxtop.listeners.ViewAnimateListener;
 import com.jayjd.boxtop.listeners.ViewAnimationShake;
+import com.jayjd.boxtop.receiver.UsbBroadcastReceiver;
 import com.jayjd.boxtop.utils.AppsUtils;
+import com.jayjd.boxtop.utils.NetworkMonitor;
 import com.jayjd.boxtop.utils.ToolUtils;
 import com.owen.tvrecyclerview.widget.TvRecyclerView;
 import com.owen.tvrecyclerview.widget.V7GridLayoutManager;
@@ -91,62 +91,32 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     AppDataBase appDataBase;
     FavoriteAppInfoDao favoriteAppInfoDao;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
-        initDefauleHome();
-        initHDMI();
-        initView();
-        initData();
-        initListener();
-    }
+    private final UsbBroadcastReceiver usbReceiver = new UsbBroadcastReceiver((isConnected, uri) -> {
+//        adb shell am broadcast -a android.intent.action.MEDIA_MOUNTED -d file:///storage/usb1
+//        adb shell am broadcast -a android.intent.action.MEDIA_UNMOUNTED -d file:///storage/usb1
 
-    private void initHDMI() {
-        TvInputManager tvInputManager = (TvInputManager) getSystemService(Context.TV_INPUT_SERVICE);
-        if (tvInputManager == null) {
-            Log.e(TAG, "initHDMI: tvInputManager 不可用");
-            return;
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            List<TvContentRating> blockedRatings = tvInputManager.getBlockedRatings();
-            Log.d(TAG, "initHDMI: 被屏蔽的评分系统: " + blockedRatings);
-        }
-        List<TvInputInfo> tvInputList = tvInputManager.getTvInputList();
-        if (tvInputList != null && !tvInputList.isEmpty()) {
-            for (TvInputInfo tvInputInfo : tvInputList) {
-                Log.d(TAG, "initHDMI: " + tvInputInfo.getId() + " " + tvInputInfo.getType());
+        int index = topSettingsAdapter.itemIndexOfFirst(TopSettingsIcons.FLASH_DRIVE_ICON);
+        if (isConnected) {
+            // 插入U盘
+            if (index == -1) {
+                List<TopSettingsIcons> items = topSettingsAdapter.getItems();
+                items.add(0, TopSettingsIcons.FLASH_DRIVE_ICON);
+                topSettingsAdapter.setItems(items);
+                topSettingsAdapter.notifyDataSetChanged();
             }
+            ToolUtils.openFileManager(this);
+            Toast.makeText(MainActivity.this, "U盘已插入", Toast.LENGTH_SHORT).show();
         } else {
-            Log.d(TAG, "initHDMI: 没有 HDMI 输入源");
+            // 拔出U盘
+            if (index != -1) {
+                List<TopSettingsIcons> items = topSettingsAdapter.getItems();
+                items.remove(index);
+                topSettingsAdapter.setItems(items);
+                topSettingsAdapter.notifyDataSetChanged();
+                Toast.makeText(MainActivity.this, "U盘已拔出", Toast.LENGTH_SHORT).show();
+            }
         }
-    }
-
-    public void switchToHdmiInput(String inputId) {
-        if (inputId == null) return;
-
-        // 构造 Intent，指向该输入源
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-
-        // 设置 Uri 为该输入源的内容 URI
-        // 格式通常是 content://android.media.tv/passthrough/输入源ID
-        Uri passthroughUri = TvContract.buildChannelsUriForInput(inputId);
-        intent.setData(passthroughUri);
-        try {
-            startActivity(intent);
-        } catch (ActivityNotFoundException e) {
-            // 如果系统没有TV应用可以处理这个URI，则切换失败。
-            // 这通常发生在系统定制不够完善或权限不足时。
-            Log.e("TV_DESKTOP", "无法启动输入源: " + inputId, e);
-        }
-    }
-
+    });
 
     private void initView() {
         ImageView wallPager = findViewById(R.id.wall_pager);
@@ -179,21 +149,140 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     }
 
     private final Executor dbExecutor = Executors.newSingleThreadExecutor();
+    NetworkMonitor networkMonitor;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_main);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+//        initDefaleHome();
+        initView();
+        initData();
+        initListener();
+    }
 
     @Override
     protected void onStart() {
         super.onStart();
+        networkMonitor = new NetworkMonitor(this, new ConnectivityManager.NetworkCallback() {
 
+            @Override
+            public void onAvailable(@NonNull Network network) {
+                // 网络可用
+                Log.d("NetworkMonitor", "网络已连接");
+            }
+
+            @Override
+            public void onLost(@NonNull Network network) {
+                // 网络断开
+                Log.d("NetworkMonitor", "网络已断开");
+                int ethernetIndex = topSettingsAdapter.itemIndexOfFirst(TopSettingsIcons.ETHERNET_ICON);
+                if (ethernetIndex != -1) {
+                    List<TopSettingsIcons> items = topSettingsAdapter.getItems();
+                    items.remove(ethernetIndex);
+                    topSettingsAdapter.setItems(items);
+                    topSettingsAdapter.notifyDataSetChanged();
+                }
+                int wifiIndex = topSettingsAdapter.itemIndexOfFirst(TopSettingsIcons.WIFI_ICON);
+                if (wifiIndex != -1) {
+                    List<TopSettingsIcons> items = topSettingsAdapter.getItems();
+                    items.remove(wifiIndex);
+                    topSettingsAdapter.setItems(items);
+                    topSettingsAdapter.notifyDataSetChanged();
+                }
+            }
+
+            @Override
+            public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities capabilities) {
+                // 网络能力改变
+                Log.d("NetworkMonitor", "网络能力改变 " + capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) + " " + capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET));
+                if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                    // 有WiFi连接
+                    Log.d("NetworkMonitor", "有WiFi连接");
+                    // 有WiFi连接，更新图标
+                    int index = topSettingsAdapter.itemIndexOfFirst(TopSettingsIcons.WIFI_ICON);
+                    if (index == -1) {
+                        List<TopSettingsIcons> items = topSettingsAdapter.getItems();
+                        items.add(0, TopSettingsIcons.WIFI_ICON);
+                        topSettingsAdapter.setItems(items);
+                        topSettingsAdapter.notifyDataSetChanged();
+                    }
+                    // 有WiFi连接，移除以太网图标
+                    int ethernetIndex = topSettingsAdapter.itemIndexOfFirst(TopSettingsIcons.ETHERNET_ICON);
+                    if (ethernetIndex != -1) {
+                        List<TopSettingsIcons> items = topSettingsAdapter.getItems();
+                        items.remove(ethernetIndex);
+                        topSettingsAdapter.setItems(items);
+                        topSettingsAdapter.notifyDataSetChanged();
+                    }
+                } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+                    // 有以太网连接
+                    Log.d("NetworkMonitor", "有以太网连接");
+                    // 有以太网连接，更新图标
+                    int index = topSettingsAdapter.itemIndexOfFirst(TopSettingsIcons.ETHERNET_ICON);
+                    if (index == -1) {
+                        List<TopSettingsIcons> items = topSettingsAdapter.getItems();
+                        items.add(0, TopSettingsIcons.ETHERNET_ICON);
+                        topSettingsAdapter.setItems(items);
+                        topSettingsAdapter.notifyDataSetChanged();
+                    }
+                    // 有以太网连接，移除WIFI图标
+                    int wifiIndex = topSettingsAdapter.itemIndexOfFirst(TopSettingsIcons.WIFI_ICON);
+                    if (wifiIndex != -1) {
+                        List<TopSettingsIcons> items = topSettingsAdapter.getItems();
+                        items.remove(wifiIndex);
+                        topSettingsAdapter.setItems(items);
+                        topSettingsAdapter.notifyDataSetChanged();
+                    }
+                }
+            }
+        });
+        networkMonitor.register();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_MEDIA_MOUNTED);    // 插入
+        filter.addAction(Intent.ACTION_MEDIA_UNMOUNTED);  // 拔出
+        filter.addAction(Intent.ACTION_MEDIA_REMOVED);    // 拔出
+        filter.addAction(Intent.ACTION_MEDIA_EJECT);      // 弹出
+        filter.addDataScheme("file");
+        registerReceiver(usbReceiver, filter);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (networkMonitor != null) {
+            networkMonitor.unregister();
+        }
+        if (usbReceiver != null) {
+            unregisterReceiver(usbReceiver);
+        }
     }
 
     private void initListener() {
         topSettingsAdapter.setOnItemClickListener((baseQuickAdapter, view, i) -> {
             TopSettingsIcons item = baseQuickAdapter.getItem(i);
-            if (item == TopSettingsIcons.WIFI_ICON) {
+            if (item == TopSettingsIcons.WIFI_ICON || item == TopSettingsIcons.ETHERNET_ICON) {
                 NetworkUtils.openWirelessSettings();
-            }
-            if (item == TopSettingsIcons.WALL_PAGER_ICON) {
-                startActivity(new Intent(this, WallPagerActivity.class));
+            } else if (item == TopSettingsIcons.FLASH_DRIVE_ICON) {
+                ToolUtils.openSystemFileManager(this);
+            } else if (item == TopSettingsIcons.SETTINGS_ICON) {
+                Intent intent = new Intent(Settings.ACTION_SETTINGS);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+            } else if (item == TopSettingsIcons.BLUETOOTH_ICON) {
+                Intent intent = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+            } else if (item == TopSettingsIcons.APPS_ICON) {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
             }
         });
         appListAdapter.setOnItemLongClickListener((parent, view, position) -> {
@@ -249,23 +338,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         });
 
         appListGrid.setOnItemListener(new TvOnItemListener());
-        favoriteAppsGrid.setOnItemListener(new TvRecyclerView.OnItemListener() {
-            @Override
-            public void onItemPreSelected(TvRecyclerView parent, View itemView, int position) {
-                Log.d("MainActivity", "onItemPreSelected position = " + position);
-                ToolUtils.endAnimation(itemView);
-            }
-
-            @Override
-            public void onItemSelected(TvRecyclerView parent, View itemView, int position) {
-                Log.d("MainActivity", "onItemSelected position = " + position);
-                ToolUtils.startAnimation(itemView);
-            }
-
-            @Override
-            public void onItemClick(TvRecyclerView parent, View itemView, int position) {
-            }
-        });
+        favoriteAppsGrid.setOnItemListener(new TvOnItemListener());
     }
 
     private void showWallPager() {
@@ -394,21 +467,17 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             switch (previewSettings) {
                 case START:
                     AppUtils.launchApp(appInfo.getPackageName());
-                    dialog.dismiss();
                     break;
                 case VIEW:
                     AppUtils.launchAppDetailsSettings(appInfo.getPackageName());
-                    dialog.dismiss();
                     break;
                 case MOVE:
                     isMoveApp = true;
                     movePosition = position;
-                    dialog.dismiss();
                     break;
                 case DELETE:
                     favoriteAppsAdapter.notifyItemRemoved(position);
                     new Thread(() -> favoriteAppInfoDao.delete(appInfo)).start();
-                    dialog.dismiss();
                     break;
                 case UNINSTALL:
                     if (appInfo.isSystem()) {
@@ -418,10 +487,11 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                     new MaterialAlertDialogBuilder(this).setTitle("卸载应用").setMessage("确定要卸载「" + appInfo.getName() + "」吗？").setPositiveButton("卸载", (d, w) -> {
                         ToolUtils.uninstallApp(this, appInfo.getPackageName());
                     }).setNegativeButton("取消", null).show();
-                    dialog.dismiss();
                     break;
             }
+            dialog.dismiss();
         });
+
         return true;
     }
 
@@ -432,6 +502,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         appDataBase = AppDataBase.getInstance(this);
         favoriteAppInfoDao = appDataBase.getFavoriteAppInfoDao();
         topSettingsAdapter = new SettingsIconAdapter();
+        topSettingsAdapter.setItemAnimation(BaseQuickAdapter.AnimationType.SlideInLeft);
         appListAdapter = new AppIconAdapter();
         favoriteAppsAdapter = new AppIconAdapter();
 
@@ -439,7 +510,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         appListGrid.setAdapter(appListAdapter);
         favoriteAppsGrid.setAdapter(favoriteAppsAdapter);
 
-        topSettingsAdapter.setItems(List.of(TopSettingsIcons.values()));
+        topSettingsAdapter.setItems(new ArrayList<>(List.of(TopSettingsIcons.getTopSettings())));
 
         new Thread(() -> {
             List<AppInfo> tempAllApps = AppsUtils.getAppsInfo(this);
@@ -525,9 +596,6 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         if (keyCode == KeyEvent.KEYCODE_MENU) {
             showSettings();
             return true;
-        } else if (keyCode == KeyEvent.KEYCODE_BACK) {
-            finish();
-            return true;
         }
 
         return super.onKeyDown(keyCode, event);
@@ -605,7 +673,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     }
 
 
-    private void initDefauleHome() {
+    private void initDefaleHome() {
         boolean defaultHome = ToolUtils.isDefaultHome(this);
         Log.d("MainActivity", "defaultHome = " + defaultHome);
         if (!defaultHome) {

@@ -5,8 +5,10 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.util.Log;
 
 import com.jayjd.boxtop.entity.AppInfo;
+import com.jayjd.boxtop.enums.AppType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,10 +60,7 @@ public class AppsUtils {
             // --- B. 需要通过 PackageInfo 获取的属性 ---
             try {
                 // 通过包名获取 PackageInfo，需要包含版本和配置信息
-                PackageInfo packageInfo = packageManager.getPackageInfo(
-                        app.packageName,
-                        PackageManager.GET_PERMISSIONS | PackageManager.GET_CONFIGURATIONS
-                );
+                PackageInfo packageInfo = packageManager.getPackageInfo(app.packageName, PackageManager.GET_PERMISSIONS | PackageManager.GET_CONFIGURATIONS);
 
                 // versionName
                 info.setVersionName(packageInfo.versionName);
@@ -79,6 +78,10 @@ public class AppsUtils {
                     info.setMinSdkVersion(0);
                 }
                 info.setTargetSdkVersion(app.targetSdkVersion);
+                AppType classify = PackageNameClassifier.classify(app, info);
+                info.setAppType(classify);
+                if (!info.isSystem())
+                    Log.d("TAG", "getAppsInfo: " + info.getAppType().getDisplayName() + " " + info.getName());
 
             } catch (Exception e) {
                 e.printStackTrace();

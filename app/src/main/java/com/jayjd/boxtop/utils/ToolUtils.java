@@ -14,6 +14,7 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.provider.DocumentsContract;
 import android.provider.Settings;
 import android.view.View;
 import android.view.animation.BounceInterpolator;
@@ -23,6 +24,7 @@ import com.blankj.utilcode.util.AppUtils;
 import com.blankj.utilcode.util.ConvertUtils;
 import com.blankj.utilcode.util.EncodeUtils;
 import com.blankj.utilcode.util.SizeUtils;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.jayjd.boxtop.entity.AppInfo;
 
 import java.io.File;
@@ -71,6 +73,27 @@ public class ToolUtils {
         }
     }
 
+    public static void openFileManager(Activity activity) {
+        new MaterialAlertDialogBuilder(activity).setTitle("提示").setMessage("是否确认插入U盘？").setPositiveButton("确认", (dialog, which) -> {
+            // 确认插入U盘
+            ToolUtils.openSystemFileManager(activity);
+            dialog.dismiss();
+        }).setNegativeButton("取消", (dialog, which) -> {
+            // 取消插入U盘
+            dialog.dismiss();
+        }).show();
+    }
+
+    public static void openSystemFileManager(Context context) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(Uri.parse("content://com.android.externalstorage.documents/root"), DocumentsContract.Document.MIME_TYPE_DIR);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        } catch (Exception ignored) {
+        }
+
+    }
 //    public static String base64ToString(String entity) {
 //        byte[] bytes;
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

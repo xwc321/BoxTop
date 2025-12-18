@@ -6,6 +6,8 @@ import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
+import com.jayjd.boxtop.enums.AppType;
+
 import java.io.Serializable;
 
 import lombok.Data;
@@ -36,4 +38,6 @@ public class AppInfo implements Serializable {
     private int minSdkVersion;
     private int targetSdkVersion;
     private boolean isSystem;
+    @Ignore
+    private AppType appType;
 }

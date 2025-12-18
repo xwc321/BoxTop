@@ -18,31 +18,35 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
     <!--顶部工具栏-->
-    <FrameLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/top_tools_container"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
-        android:background="@drawable/bg_blur_card"
         android:focusable="false"
-        android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:ignore="RtlSymmetry">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
         <com.owen.tvrecyclerview.widget.TvRecyclerView
             android:id="@+id/top_settings_lists"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:background="@drawable/bg_blur_card"
             android:orientation="horizontal"
             android:padding="8dp"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintWidth_default="wrap"
             app:tv_horizontalSpacingWithMargins="8dp"
-            app:tv_isMemoryFocus="false"
-            app:tv_isMenu="true"
             app:tv_verticalSpacingWithMargins="8dp"
+            tools:itemCount="6"
             tools:listitem="@layout/activity_settings_icon_item" />
-    </FrameLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
     <!--首页中间预览-->
     <FrameLayout
         android:id="@+id/preview_panel"
