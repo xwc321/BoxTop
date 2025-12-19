@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <style name="CustomAppDialogTheme" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <!-- Dialog 窗口背景透明 -->
+        <item name="android:windowBackground">@android:color/transparent</item>
+
+        <!-- 去掉默认边距（非常关键） -->
+        <item name="android:windowContentOverlay">@null</item>
+        <!-- 设置对话框大小 -->
+        <item name="android:windowMinWidthMajor">90%</item>
+        <item name="android:windowMinWidthMinor">90%</item>
+    </style>
+
     <style name="CustomDialogTheme" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
         <!-- Dialog 窗口背景透明 -->
         <item name="android:windowBackground">@android:color/transparent</item>
@@ -8,7 +19,7 @@
         <!-- 去掉默认边距（非常关键） -->
         <item name="android:windowContentOverlay">@null</item>
         <!-- 设置对话框大小 -->
-        <item name="android:windowMinWidthMajor">98%</item>
-        <item name="android:windowMinWidthMinor">98%</item>
+        <item name="android:windowMinWidthMajor">60%</item>
+        <item name="android:windowMinWidthMinor">60%</item>
     </style>
 </resources>

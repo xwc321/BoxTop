@@ -70,23 +70,26 @@
                 android:layout_weight="1"
                 android:background="@drawable/bg_apple_card"
                 android:clipToOutline="true"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                tools:targetApi="31">
 
                 <TextView
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:background="@drawable/bg_title_movie"
-                    android:paddingVertical="6dp"
+                    android:gravity="center"
+                    android:letterSpacing="0.05"
                     android:text="电影"
-                    android:textAlignment="center"
-                    android:textColor="@color/text_primary" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
                 <com.owen.tvrecyclerview.widget.TvRecyclerView
                     android:id="@+id/movie"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="8dp"
+                    android:padding="12dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     app:tv_horizontalSpacingWithMargins="8dp"
                     app:tv_selectedItemIsCentered="true"
@@ -102,23 +105,26 @@
                 android:layout_weight="1"
                 android:background="@drawable/bg_apple_card"
                 android:clipToOutline="true"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                tools:targetApi="31">
 
                 <TextView
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:background="@drawable/bg_title_tv"
-                    android:paddingVertical="6dp"
+                    android:gravity="center"
+                    android:letterSpacing="0.05"
                     android:text="电视剧"
-                    android:textAlignment="center"
-                    android:textColor="@color/text_primary" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
                 <com.owen.tvrecyclerview.widget.TvRecyclerView
                     android:id="@+id/tv"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="8dp"
+                    android:padding="12dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     app:tv_horizontalSpacingWithMargins="8dp"
                     app:tv_selectedItemIsCentered="true"
@@ -134,23 +140,26 @@
                 android:layout_weight="1"
                 android:background="@drawable/bg_apple_card"
                 android:clipToOutline="true"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                tools:targetApi="31">
 
                 <TextView
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:background="@drawable/bg_title_zongyi"
-                    android:paddingVertical="6dp"
+                    android:gravity="center"
+                    android:letterSpacing="0.05"
                     android:text="综艺"
-                    android:textAlignment="center"
-                    android:textColor="@color/text_primary" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
                 <com.owen.tvrecyclerview.widget.TvRecyclerView
                     android:id="@+id/zongyi"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="8dp"
+                    android:padding="12dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     app:tv_horizontalSpacingWithMargins="8dp"
                     app:tv_selectedItemIsCentered="true"
@@ -166,16 +175,19 @@
                 android:layout_weight="1"
                 android:background="@drawable/bg_apple_card"
                 android:clipToOutline="true"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                tools:targetApi="31">
 
                 <TextView
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:background="@drawable/bg_title_dongman"
-                    android:paddingVertical="6dp"
+                    android:gravity="center"
+                    android:letterSpacing="0.05"
                     android:text="动漫"
-                    android:textAlignment="center"
-                    android:textColor="@color/text_primary" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
 
                 <com.owen.tvrecyclerview.widget.TvRecyclerView
@@ -183,7 +195,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="8dp"
+                    android:padding="12dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     app:tv_horizontalSpacingWithMargins="8dp"
                     app:tv_selectedItemIsCentered="true"

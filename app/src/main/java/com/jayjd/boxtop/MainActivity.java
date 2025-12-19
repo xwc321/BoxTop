@@ -529,7 +529,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         });
         appListAdapter.setOnItemLongClickListener((parent, view, position) -> {
             Log.d("MainActivity", "onItemChildLongClick position = " + position);
-            return showAppSettingsDialog(parent, view, position);
+            return showAppSettingsDialog(parent, position, PreviewSettings.getAllAppsSettings());
         });
         appListAdapter.setOnItemClickListener((parent, view, position) -> {
             Log.d("MainActivity", "onItemClick position = " + position);
@@ -548,7 +548,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
 
         favoriteAppsAdapter.setOnItemLongClickListener((baseQuickAdapter, view, position) -> {
             Log.d("MainActivity", "onItemChildLongClick position = " + position);
-            return showAppSettingsDialog(baseQuickAdapter, view, position);
+            return showAppSettingsDialog(baseQuickAdapter, position, PreviewSettings.getFavoriteSettings());
         });
         favoriteAppsAdapter.setOnItemClickListener((baseQuickAdapter, view, i) -> {
             if (isMoveApp) {
@@ -599,7 +599,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         dialogAppIconAdapter.setItems(systemApps);
         dialogAppIconAdapter.setOnItemLongClickListener((baseQuickAdapter, view2, i) -> {
             Log.d("MainActivity", "onItemChildLongClick position = " + i);
-            return showAppSettingsDialog(baseQuickAdapter, view2, i);
+            return showAppSettingsDialog(baseQuickAdapter, i, PreviewSettings.getAllAppsSettings());
         });
         dialogAppIconAdapter.setOnItemClickListener((baseQuickAdapter1, view1, i1) -> {
             AppInfo item = baseQuickAdapter1.getItem(i1);
@@ -618,7 +618,10 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
 
 
     public Dialog showMaterialAlertDialog(Context context, String titleName, View rootView) {
-        Dialog dialog = new Dialog(context, R.style.CustomDialogTheme);
+        int styleId;
+        if (titleName.equals("应用设置")) styleId = R.style.CustomDialogTheme;
+        else styleId = R.style.CustomAppDialogTheme;
+        Dialog dialog = new Dialog(context, styleId);
         dialog.setContentView(rootView);
         dialog.setOnKeyListener((dialog1, keyCode, event) -> {
             if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN) {
@@ -636,7 +639,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    private boolean showAppSettingsDialog(BaseQuickAdapter<AppInfo, ?> parent, View view, int position) {
+    private boolean showAppSettingsDialog(BaseQuickAdapter<AppInfo, ?> parent, int position, PreviewSettings[] previewSettings) {
         AppInfo appInfo = parent.getItem(position);
         if (appInfo.getPackageName().isEmpty()) {
             return false;
@@ -673,11 +676,11 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         PreviewSettingsAdapter previewSettingsAdapter = new PreviewSettingsAdapter();
         previewSettingsRecyclerview.setAdapter(previewSettingsAdapter);
 
-        previewSettingsAdapter.setItems(Arrays.asList(PreviewSettings.values()));
+        previewSettingsAdapter.setItems(Arrays.asList(previewSettings));
         previewSettingsRecyclerview.requestFocus();
         previewSettingsAdapter.setOnItemClickListener((baseQuickAdapter, view1, which) -> {
-            PreviewSettings previewSettings = baseQuickAdapter.getItem(which);
-            switch (previewSettings) {
+            PreviewSettings settings = baseQuickAdapter.getItem(which);
+            switch (settings) {
                 case START:
                     AppUtils.launchApp(appInfo.getPackageName());
                     break;
@@ -700,9 +703,6 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                         return;
                     }
                     ToolUtils.uninstallApp(this, appInfo.getPackageName());
-//                    new MaterialAlertDialogBuilder(this).setTitle("卸载应用").setMessage("确定要卸载「" + appInfo.getName() + "」吗？").setPositiveButton("卸载", (d, w) -> {
-//
-//                    }).setNegativeButton("取消", null).show();
                     break;
             }
             dialog.dismiss();
