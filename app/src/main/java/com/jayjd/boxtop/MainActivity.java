@@ -84,13 +84,9 @@ import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity implements ViewAnimateListener {
     private static final String TAG = "MainActivity";
-    FrameLayout previewPanel;
-    ImageView previewIcon;
-    TextView previewTitle;
-    TextView previewDesc;
     FrameLayout allAppsContainer;
     FrameLayout favoriteAppsContainer;
-    private List<AppInfo> favoriteApps = new ArrayList<>();
+    private final List<AppInfo> favoriteApps = new ArrayList<>();
     TvRecyclerView appListGrid;
     TvRecyclerView favoriteAppsGrid;
     TvRecyclerView topSettingsBar;
@@ -255,16 +251,18 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         }
     }
 
+    CategoryTvAdapter categoryMovieAdapter;
+    CategoryTvAdapter categoryTvAdapter;
+    CategoryTvAdapter categoryZongYiAdapter;
+    CategoryTvAdapter categoryDongManAdapter;
+    FrameLayout previewPanel;
+
     private void initView() {
         wallPager = findViewById(R.id.wall_pager);
         initWallPager();
         // 顶部设置按钮
         topSettingsBar = findViewById(R.id.top_settings_lists);
-        // 选中后预览的界面
         previewPanel = findViewById(R.id.preview_panel);
-        previewIcon = findViewById(R.id.preview_icon);
-        previewTitle = findViewById(R.id.preview_title);
-        previewDesc = findViewById(R.id.preview_desc);
         // 常用的软件
         favoriteAppsContainer = findViewById(R.id.favorite_apps_container);
         favoriteAppsGrid = findViewById(R.id.favorite_apps_grid);
@@ -283,6 +281,28 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             int screenHeight = ScreenUtils.getScreenHeight();
             allAppsContainer.setTranslationY(screenHeight);
         });
+
+        TvRecyclerView movie = findViewById(R.id.movie);
+        TvRecyclerView tv = findViewById(R.id.tv);
+        TvRecyclerView zongyi = findViewById(R.id.zongyi);
+        TvRecyclerView dongman = findViewById(R.id.dongman);
+
+
+        movie.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.VERTICAL, false));
+        tv.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.VERTICAL, false));
+        zongyi.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.VERTICAL, false));
+        dongman.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.VERTICAL, false));
+
+
+        categoryMovieAdapter = new CategoryTvAdapter();
+        categoryTvAdapter = new CategoryTvAdapter();
+        categoryZongYiAdapter = new CategoryTvAdapter();
+        categoryDongManAdapter = new CategoryTvAdapter();
+        movie.setAdapter(categoryMovieAdapter);
+        tv.setAdapter(categoryTvAdapter);
+        zongyi.setAdapter(categoryZongYiAdapter);
+        dongman.setAdapter(categoryDongManAdapter);
+
     }
 
     private final Executor dbExecutor = Executors.newSingleThreadExecutor();
@@ -511,6 +531,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             Log.d("MainActivity", "onItemClick position = " + position);
             AppInfo appInfo = parent.getItem(position);
             if (appInfo.getPackageName().isEmpty()) {
+                previewPanel.setVisibility(View.INVISIBLE);
                 if (appInfo.getName().equals("系统应用")) {
                     showSystemApps();
                 } else if (appInfo.getName().equals("壁纸")) {
@@ -533,7 +554,6 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             }
             AppInfo item = baseQuickAdapter.getItem(i);
             if (item.getPackageName().isEmpty()) {
-                previewPanel.setVisibility(View.GONE);
                 View inflate = LayoutInflater.from(this).inflate(R.layout.activity_dialog_all_app, null);
                 TvRecyclerView allDialogGrid = inflate.findViewById(R.id.all_dialog_grid);
                 int or = appListAdapter.getItemCount() <= 5 ? 1 : 2;
@@ -587,7 +607,6 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         allDialogGrid.setOnItemListener(new TvOnItemListener());
         allDialogGrid.requestFocus();
         allAppsContainer.setVisibility(View.INVISIBLE);
-        previewPanel.setVisibility(View.INVISIBLE);
         showMaterialAlertDialog(this, "系统应用", inflate);
     }
 
@@ -614,7 +633,6 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
 
     @SuppressLint("NotifyDataSetChanged")
     private boolean showAppSettingsDialog(BaseQuickAdapter<AppInfo, ?> parent, View view, int position) {
-        previewPanel.setVisibility(View.INVISIBLE);
         AppInfo appInfo = parent.getItem(position);
         if (appInfo.getPackageName().isEmpty()) {
             return false;
@@ -760,12 +778,38 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                             HotSearchEntity.DataBean data = hotSearchEntity.getData();
                             if (data.getErrCode() == 0) {
                                 HotSearchEntity.DataBean.MapResultBean mapResult = data.getMapResult();
-                                HotSearchEntity.DataBean.MapResultBean._$0Bean mapResult_$0 = mapResult.get_$0();
-                                String channelTitle = mapResult_$0.getChannelTitle();
-                                List<HotSearchEntity.DataBean.MapResultBean._$0Bean.ListInfoBean> listInfo = mapResult_$0.getListInfo();
-                                for (HotSearchEntity.DataBean.MapResultBean._$0Bean.ListInfoBean listInfoBean : listInfo) {
-                                    Log.d(TAG, "onSuccess: " + channelTitle + " " + listInfoBean.getTitle());
+                                List<HotSearchEntity.DataBean.MapResultBean._$1Bean.ListInfoBeanX> movies = mapResult.get_$1().getListInfo();
+                                List<HotSearchEntity.DataBean.MapResultBean._$2Bean.ListInfoBeanXX> tvs = mapResult.get_$2().getListInfo();
+                                List<HotSearchEntity.DataBean.MapResultBean._$10Bean.ListInfoBeanXXXXXXX> zongyis = mapResult.get_$10().getListInfo();
+                                List<HotSearchEntity.DataBean.MapResultBean._$3Bean.ListInfoBeanXXX> dongmans = mapResult.get_$3().getListInfo();
+                                List<String> list1 = new ArrayList<>();
+                                for (HotSearchEntity.DataBean.MapResultBean._$1Bean.ListInfoBeanX movie : movies) {
+                                    list1.add(movie.getTitle());
                                 }
+                                List<String> list2 = new ArrayList<>();
+                                for (HotSearchEntity.DataBean.MapResultBean._$2Bean.ListInfoBeanXX movie : tvs) {
+                                    list2.add(movie.getTitle());
+                                }
+                                List<String> list3 = new ArrayList<>();
+                                for (HotSearchEntity.DataBean.MapResultBean._$10Bean.ListInfoBeanXXXXXXX movie : zongyis) {
+                                    list3.add(movie.getTitle());
+                                }
+                                List<String> list4 = new ArrayList<>();
+                                for (HotSearchEntity.DataBean.MapResultBean._$3Bean.ListInfoBeanXXX movie : dongmans) {
+                                    list4.add(movie.getTitle());
+                                }
+
+                                categoryMovieAdapter.setItems(list1);
+                                categoryTvAdapter.setItems(list2);
+                                categoryZongYiAdapter.setItems(list3);
+                                categoryDongManAdapter.setItems(list4);
+
+
+                                categoryMovieAdapter.notifyDataSetChanged();
+                                categoryTvAdapter.notifyDataSetChanged();
+                                categoryZongYiAdapter.notifyDataSetChanged();
+                                categoryDongManAdapter.notifyDataSetChanged();
+
                                 return;
                             }
                         }
@@ -866,24 +910,8 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         });
     }
 
-    @SuppressLint("SetTextI18n")
-    private void showPreview(AppInfo appInfo) {
-        previewPanel.setVisibility(View.VISIBLE);
-        Drawable drawable = ToolUtils.getBase64ToDrawable(appInfo.isBanner() ? appInfo.getAppBannerBase64() : appInfo.getAppIconBase64());
-        Glide.with(this).load(drawable).into(previewIcon);
-        previewTitle.setText(appInfo.getName());
-        previewDesc.setText(appInfo.getPackageName() + " " + appInfo.getVersionName());
-
-        // 动画：淡入 + 放大
-        previewPanel.setScaleX(0.9f);
-        previewPanel.setScaleY(0.9f);
-        previewPanel.setAlpha(0f);
-
-        previewPanel.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(200).start();
-    }
-
     private void showAllApps() {
-        if (previewPanel.getVisibility() == View.VISIBLE) previewPanel.setVisibility(View.GONE);
+        previewPanel.setVisibility(View.INVISIBLE);
         topSettingsBar.setVisibility(View.GONE);
         int screenHeight = ScreenUtils.getScreenHeight();
         Log.d(TAG, "showAllApps: " + screenHeight);
@@ -893,6 +921,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     }
 
     private void showHomeApps() {
+        previewPanel.setVisibility(View.VISIBLE);
         topSettingsBar.setVisibility(View.VISIBLE);
         int screenHeight = ScreenUtils.getScreenHeight();
         favoriteAppsContainer.animate().translationY(0).setDuration(500).start();
