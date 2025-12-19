@@ -4,9 +4,16 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.Log;
 
+import androidx.palette.graphics.Palette;
+
+import com.blankj.utilcode.util.ConvertUtils;
+import com.blankj.utilcode.util.EncodeUtils;
 import com.jayjd.boxtop.entity.AppInfo;
 import com.jayjd.boxtop.enums.AppType;
 
@@ -32,13 +39,19 @@ public class AppsUtils {
 
         // 存储最终结果的列表
         List<AppInfo> appInfoList = new ArrayList<>();
-
-        // 2. 遍历应用列表，获取详细信息并填充 AppInfo 对象
         for (ApplicationInfo app : applications) {
-
-            // 排除应用信息为空的情况
             if (app == null) continue;
+            AppInfo info = getAppInfo(context, app.packageName);
+            if (info == null) continue;
+            appInfoList.add(info);
+        }
+        return appInfoList;
+    }
 
+    public static AppInfo getAppInfo(Context context, String pkg) {
+        try {
+            PackageManager packageManager = context.getPackageManager();
+            ApplicationInfo app = packageManager.getApplicationInfo(pkg, PackageManager.GET_META_DATA);
             AppInfo info = new AppInfo();
 
             // --- A. 直接从 ApplicationInfo 获取的属性 ---
@@ -51,7 +64,6 @@ public class AppsUtils {
 
             // icon (图标)
             info.setAppIcon(app.loadIcon(packageManager));
-
             // isSystem (判断是否是系统应用)
             // ApplicationInfo.FLAG_SYSTEM 用于标记系统应用
             info.setSystem((app.flags & ApplicationInfo.FLAG_SYSTEM) != 0);
@@ -82,18 +94,41 @@ public class AppsUtils {
                 info.setAppType(classify);
                 if (!info.isSystem())
                     Log.d("TAG", "getAppsInfo: " + info.getAppType().getDisplayName() + " " + info.getName());
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                // 如果找不到包信息（极少发生，通常是包被卸载或查询时出现权限问题）
-                continue; // 跳过这个应用
-            } catch (Throwable e) {
-                e.printStackTrace();
-                continue;
+                configAppIcon(context, info);
+                return info;
+            } catch (Throwable ignored) {
             }
-            // 3. 将完整的 AppInfo 对象添加到列表中
-            appInfoList.add(info);
+        } catch (PackageManager.NameNotFoundException ignored) {
         }
-        return appInfoList;
+        return null;
+    }
+
+    public static void configAppIcon(Context context, AppInfo appInfo) {
+        Drawable banner = ToolUtils.getTvAppIcon(context, appInfo.getPackageName());
+        if (banner != null) {
+            byte[] bytes = ConvertUtils.drawable2Bytes(banner);
+            String bannerStr = EncodeUtils.base64Encode2String(bytes);
+            appInfo.setAppBannerBase64(bannerStr);
+            appInfo.setAppBanner(banner);
+            appInfo.setBanner(true);
+        } else {
+            if (appInfo.getAppIcon() != null) {
+                byte[] bytes = ConvertUtils.drawable2Bytes(appInfo.getAppIcon());
+                String iconStr = EncodeUtils.base64Encode2String(bytes);
+                appInfo.setAppIconBase64(iconStr);
+                Bitmap bitmap = ConvertUtils.drawable2Bitmap(appInfo.getAppIcon());
+                if (bitmap == null) return;
+                Palette generate = Palette.from(bitmap).generate();
+                Palette.Swatch dominantSwatch = generate.getDominantSwatch();
+                if (dominantSwatch != null) {
+                    int normalizeColor = ToolUtils.normalizeBold(dominantSwatch.getRgb());
+                    appInfo.setCardColor(normalizeColor);
+                } else {
+                    appInfo.setCardColor(Color.parseColor("#263238"));
+                }
+            } else {
+                appInfo.setCardColor(Color.parseColor("#263238"));
+            }
+        }
     }
 }

@@ -9,7 +9,6 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
@@ -34,11 +33,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.palette.graphics.Palette;
 
 import com.blankj.utilcode.util.AppUtils;
-import com.blankj.utilcode.util.ConvertUtils;
-import com.blankj.utilcode.util.EncodeUtils;
 import com.blankj.utilcode.util.NetworkUtils;
 import com.blankj.utilcode.util.PermissionUtils;
 import com.blankj.utilcode.util.ResourceUtils;
@@ -95,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     TextView previewDesc;
     FrameLayout allAppsContainer;
     FrameLayout favoriteAppsContainer;
-    private final List<AppInfo> favoriteApps = new ArrayList<>();
+    private List<AppInfo> favoriteApps = new ArrayList<>();
     TvRecyclerView appListGrid;
     TvRecyclerView favoriteAppsGrid;
     TvRecyclerView topSettingsBar;
@@ -151,6 +147,101 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                     Toast.makeText(MainActivity.this, "蓝牙已断开", Toast.LENGTH_SHORT).show();
                 }
             }
+        }
+
+        @SuppressLint("NotifyDataSetChanged")
+        @Override
+        public void onInstalled(Context context, String pkg) {
+            AppInfo appInfo = AppsUtils.getAppInfo(context, pkg);
+            if (appInfo == null) return;
+            allApps = appListAdapter.getItems();
+            allApps.add(0, appInfo);
+            appListAdapter.setItems(allApps);
+            appListAdapter.notifyDataSetChanged();
+
+            favoriteApps = favoriteAppsAdapter.getItems();
+            if (favoriteApps.isEmpty()) {
+                Log.d(TAG, "onInstalled: 常用列表为空");
+                return;
+            }
+            AppInfo delFavorAppInfo = Iterables.find(new ArrayList<>(favoriteApps), input -> {
+                if (input != null && !input.getPackageName().isEmpty()) {
+                    return input.getPackageName().equals(pkg);
+                }
+                return false;
+            }, null);
+            if (delFavorAppInfo == null) {
+                return;
+            }
+            favoriteApps.remove(delFavorAppInfo);
+            appInfo.setSortIndex(delFavorAppInfo.getSortIndex());
+            favoriteApps.add(appInfo.getSortIndex(), appInfo);
+            favoriteAppsAdapter.setItems(favoriteApps);
+            favoriteAppsAdapter.notifyDataSetChanged();
+            new Thread(() -> favoriteAppInfoDao.update(delFavorAppInfo)).start();
+        }
+
+        @SuppressLint("NotifyDataSetChanged")
+        @Override
+        public void onUninstalled(Context context, String pkg) {
+            allApps = appListAdapter.getItems();
+            AppInfo appInfo = Iterables.find(allApps, input -> {
+                if (input != null) {
+                    return input.getPackageName().equals(pkg);
+                }
+                return false;
+            });
+            if (appInfo == null) return;
+            allApps.remove(appInfo);
+            appListAdapter.setItems(allApps);
+            appListAdapter.notifyDataSetChanged();
+
+            favoriteApps = favoriteAppsAdapter.getItems();
+            AppInfo delFavorAppInfo = Iterables.find(favoriteApps, input -> {
+                if (input != null) {
+                    return input.getPackageName().equals(pkg);
+                }
+                return false;
+            });
+            if (delFavorAppInfo == null) return;
+            favoriteApps.remove(delFavorAppInfo);
+            favoriteAppsAdapter.setItems(favoriteApps);
+            favoriteAppsAdapter.notifyDataSetChanged();
+            new Thread(() -> favoriteAppInfoDao.deleteByPackageName(pkg)).start();
+        }
+
+        @SuppressLint("NotifyDataSetChanged")
+        @Override
+        public void onUpdated(Context context, String pkg) {
+            AppInfo appInfo = AppsUtils.getAppInfo(context, pkg);
+            if (appInfo == null) return;
+            allApps = appListAdapter.getItems();
+            AppInfo delAppInfo = Iterables.find(allApps, input -> {
+                if (input != null) {
+                    return input.getPackageName().equals(pkg);
+                }
+                return false;
+            });
+            if (delAppInfo == null) return;
+            allApps.remove(delAppInfo);
+            allApps.add(0, appInfo);
+            appListAdapter.setItems(allApps);
+            appListAdapter.notifyDataSetChanged();
+
+            favoriteApps = favoriteAppsAdapter.getItems();
+            AppInfo delFavorAppInfo = Iterables.find(favoriteApps, input -> {
+                if (input != null) {
+                    return input.getPackageName().equals(pkg);
+                }
+                return false;
+            });
+            if (delFavorAppInfo == null) return;
+            favoriteApps.remove(delFavorAppInfo);
+            appInfo.setSortIndex(delFavorAppInfo.getSortIndex());
+            favoriteApps.add(appInfo.getSortIndex(), appInfo);
+            favoriteAppsAdapter.setItems(favoriteApps);
+            favoriteAppsAdapter.notifyDataSetChanged();
+            new Thread(() -> favoriteAppInfoDao.update(delFavorAppInfo)).start();
         }
     });
     ImageView wallPager;
@@ -323,6 +414,11 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
 
         filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED); // 蓝牙连接
         filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED); // 蓝牙断开
+
+        filter.addAction(Intent.ACTION_PACKAGE_ADDED);
+        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+        filter.addAction(Intent.ACTION_PACKAGE_REPLACED);
+        filter.addDataScheme("package");
 
         filter.addDataScheme("file");
         registerReceiver(usbReceiver, filter);
@@ -544,37 +640,6 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         return dialog;
     }
 
-    private void getAllAppsBanner(List<AppInfo> appsInfo) {
-        for (AppInfo appInfo : appsInfo) {
-            Drawable banner = ToolUtils.getTvAppIcon(this, appInfo.getPackageName());
-            if (banner != null) {
-                byte[] bytes = ConvertUtils.drawable2Bytes(banner);
-                String bannerStr = EncodeUtils.base64Encode2String(bytes);
-                appInfo.setAppBannerBase64(bannerStr);
-                appInfo.setAppBanner(banner);
-                appInfo.setBanner(true);
-            } else {
-                if (appInfo.getAppIcon() != null) {
-                    byte[] bytes = ConvertUtils.drawable2Bytes(appInfo.getAppIcon());
-                    String iconStr = EncodeUtils.base64Encode2String(bytes);
-                    appInfo.setAppIconBase64(iconStr);
-                    Bitmap bitmap = ConvertUtils.drawable2Bitmap(appInfo.getAppIcon());
-                    if (bitmap == null) continue;
-                    Palette generate = Palette.from(bitmap).generate();
-                    Palette.Swatch dominantSwatch = generate.getDominantSwatch();
-                    if (dominantSwatch != null) {
-                        int normalizeColor = ToolUtils.normalizeBold(dominantSwatch.getRgb());
-                        appInfo.setCardColor(normalizeColor);
-                    } else {
-                        appInfo.setCardColor(Color.parseColor("#263238"));
-                    }
-                } else {
-                    appInfo.setCardColor(Color.parseColor("#263238"));
-                }
-            }
-        }
-    }
-
     @SuppressLint("NotifyDataSetChanged")
     private boolean showAppSettingsDialog(BaseQuickAdapter<AppInfo, ?> parent, View view, int position) {
         previewPanel.setVisibility(View.INVISIBLE);
@@ -670,7 +735,6 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
 
         new Thread(() -> {
             List<AppInfo> tempAllApps = AppsUtils.getAppsInfo(this);
-            getAllAppsBanner(tempAllApps);
             allApps = Lists.newArrayList(Iterables.filter(tempAllApps, AppAllInfo -> {
                 if (AppAllInfo != null) {
                     return !AppAllInfo.isSystem();

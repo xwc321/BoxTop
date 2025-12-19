@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.util.Log;
 
 import com.jayjd.boxtop.listeners.UsbDriveListener;
@@ -32,6 +33,22 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
         } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
             // 蓝牙断开
             usbDriveListener.onBluetoothStateChanged(false);
+        }
+        Uri data = intent.getData();
+        if (data == null) return;
+        String pkg = data.getSchemeSpecificPart();
+        if (Intent.ACTION_PACKAGE_ADDED.equals(action)) {
+            if (!intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) {
+                if (usbDriveListener != null) usbDriveListener.onInstalled(context, pkg);
+            }
+
+        } else if (Intent.ACTION_PACKAGE_REMOVED.equals(action)) {
+            if (!intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) {
+                if (usbDriveListener != null) usbDriveListener.onUninstalled(context, pkg);
+            }
+
+        } else if (Intent.ACTION_PACKAGE_REPLACED.equals(action)) {
+            if (usbDriveListener != null) usbDriveListener.onUpdated(context, pkg);
         }
     }
 }
