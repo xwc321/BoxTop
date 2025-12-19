@@ -274,7 +274,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
 
         topSettingsBar.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.HORIZONTAL, false));
         favoriteAppsGrid.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.HORIZONTAL, false));
-        appListGrid.setLayoutManager(new V7GridLayoutManager(this, 4));
+        appListGrid.setLayoutManager(new V7GridLayoutManager(this, 5));
 
         topSettingsBar.setOnInBorderKeyEventListener(new ViewAnimationShake(topSettingsBar, this, 0, this));
         favoriteAppsGrid.setOnInBorderKeyEventListener(new ViewAnimationShake(favoriteAppsGrid, this, 1, this));
@@ -536,16 +536,18 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                 previewPanel.setVisibility(View.GONE);
                 View inflate = LayoutInflater.from(this).inflate(R.layout.activity_dialog_all_app, null);
                 TvRecyclerView allDialogGrid = inflate.findViewById(R.id.all_dialog_grid);
-                allDialogGrid.setLayoutManager(new V7GridLayoutManager(this, 2, V7GridLayoutManager.HORIZONTAL, false));
+                int or = appListAdapter.getItemCount() <= 5 ? 1 : 2;
+                allDialogGrid.setLayoutManager(new V7GridLayoutManager(this, or, V7GridLayoutManager.HORIZONTAL, false));
                 AppIconAdapter dialogAppIconAdapter = new AppIconAdapter();
                 allDialogGrid.setAdapter(dialogAppIconAdapter);
-                allApps = Lists.newArrayList(Iterables.filter(appListAdapter.getItems(), appInfo -> {
+                List<AppInfo> tempAppList = Lists.newArrayList(Iterables.filter(appListAdapter.getItems(), appInfo -> {
                     if (appInfo != null) {
                         return !appInfo.getPackageName().isEmpty();
                     }
                     return false;
                 }));
-                dialogAppIconAdapter.setItems(allApps);
+                tempAppList.addAll(tempAppList.size(), systemApps);
+                dialogAppIconAdapter.setItems(tempAppList);
                 dialogAppIconAdapter.setOnItemClickListener((baseQuickAdapter1, view1, i1) -> addFavoriteApp(baseQuickAdapter1, i1, favoriteAppsAdapter));
                 allDialogGrid.setOnItemListener(new TvOnItemListener());
                 allDialogGrid.requestFocus();
@@ -567,7 +569,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     private void showSystemApps() {
         View inflate = LayoutInflater.from(this).inflate(R.layout.activity_dialog_all_app, null);
         TvRecyclerView allDialogGrid = inflate.findViewById(R.id.all_dialog_grid);
-        allDialogGrid.setLayoutManager(new V7GridLayoutManager(this, 4));
+        allDialogGrid.setLayoutManager(new V7GridLayoutManager(this, 5));
         AppIconAdapter dialogAppIconAdapter = new AppIconAdapter();
         allDialogGrid.setAdapter(dialogAppIconAdapter);
         dialogAppIconAdapter.setItems(systemApps);

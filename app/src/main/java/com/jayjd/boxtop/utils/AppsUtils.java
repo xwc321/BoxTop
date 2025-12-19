@@ -41,6 +41,7 @@ public class AppsUtils {
         List<AppInfo> appInfoList = new ArrayList<>();
         for (ApplicationInfo app : applications) {
             if (app == null) continue;
+            if (app.packageName.equals(context.getPackageName())) continue;
             AppInfo info = getAppInfo(context, app.packageName);
             if (info == null) continue;
             appInfoList.add(info);
