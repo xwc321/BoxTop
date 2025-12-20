@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.icu.text.SimpleDateFormat;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -69,6 +70,7 @@ import com.jayjd.boxtop.utils.BlurCompat;
 import com.jayjd.boxtop.utils.NetworkMonitor;
 import com.jayjd.boxtop.utils.SPUtils;
 import com.jayjd.boxtop.utils.ToolUtils;
+import com.jayjd.boxtop.utils.cpu.CpuMonitor;
 import com.lzy.okgo.OkGo;
 import com.lzy.okgo.callback.StringCallback;
 import com.lzy.okgo.model.Response;
@@ -80,8 +82,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -134,6 +138,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                     topSettingsAdapter.setItems(items);
                     topSettingsAdapter.notifyDataSetChanged();
                 }
+
                 Toast.makeText(MainActivity.this, "蓝牙已连接", Toast.LENGTH_SHORT).show();
             } else {
                 // 蓝牙断开
@@ -238,12 +243,8 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     });
     private List<AppInfo> hiddenApps = new ArrayList<>();
     ImageView wallPager;
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        initWallPager();
-    }
+    TextView functionTitle;
+    CpuMonitor cpuMonitor;
 
     private void initWallPager() {
         String defaultWallpaper = (String) SPUtils.get(this, "default_wallpaper", "");
@@ -265,56 +266,18 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     CategoryTvAdapter categoryDongManAdapter;
     FrameLayout previewPanel;
 
-    private void initView() {
-        wallPager = findViewById(R.id.wall_pager);
+    @Override
+    protected void onResume() {
+        super.onResume();
         initWallPager();
-        // 顶部设置按钮
-        topSettingsBar = findViewById(R.id.top_settings_lists);
-        previewPanel = findViewById(R.id.preview_panel);
-        // 常用的软件
-        favoriteAppsContainer = findViewById(R.id.favorite_apps_container);
-        favoriteAppsGrid = findViewById(R.id.favorite_apps_grid);
-        // 所有软件的布局和列表
-        allAppsContainer = findViewById(R.id.all_apps_container);
-        appListGrid = findViewById(R.id.all_apps_grid);
+        startCpuMonitor();
+    }
 
-        topSettingsBar.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.HORIZONTAL, false));
-        favoriteAppsGrid.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.HORIZONTAL, false));
-        appListGrid.setLayoutManager(new V7GridLayoutManager(this, 5));
-        topSettingsBar.setOnInBorderKeyEventListener(new ViewAnimationShake(topSettingsBar, this, 0, this));
-        favoriteAppsGrid.setOnInBorderKeyEventListener(new ViewAnimationShake(favoriteAppsGrid, this, 1, this));
-        appListGrid.setOnInBorderKeyEventListener(new ViewAnimationShake(appListGrid, this, 2, this));
-        allAppsContainer.post(() -> {
-            int screenHeight = ScreenUtils.getScreenHeight();
-            allAppsContainer.setTranslationY(screenHeight);
-            allAppsContainer.setVisibility(View.VISIBLE);
-        });
-
-        TvRecyclerView movie = findViewById(R.id.movie);
-        TvRecyclerView tv = findViewById(R.id.tv);
-        TvRecyclerView zongyi = findViewById(R.id.zongyi);
-        TvRecyclerView dongman = findViewById(R.id.dongman);
-
-
-        movie.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.VERTICAL, false));
-        tv.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.VERTICAL, false));
-        zongyi.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.VERTICAL, false));
-        dongman.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.VERTICAL, false));
-
-        movie.setOnItemListener(new TvOnItemListener());
-        tv.setOnItemListener(new TvOnItemListener());
-        zongyi.setOnItemListener(new TvOnItemListener());
-        dongman.setOnItemListener(new TvOnItemListener());
-
-        categoryMovieAdapter = new CategoryTvAdapter();
-        categoryTvAdapter = new CategoryTvAdapter();
-        categoryZongYiAdapter = new CategoryTvAdapter();
-        categoryDongManAdapter = new CategoryTvAdapter();
-        movie.setAdapter(categoryMovieAdapter);
-        tv.setAdapter(categoryTvAdapter);
-        zongyi.setAdapter(categoryZongYiAdapter);
-        dongman.setAdapter(categoryDongManAdapter);
-
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG, "onPause: 暂停了！");
+        if (cpuMonitor != null) cpuMonitor.stopMonitoring();
     }
 
     private final Executor dbExecutor = Executors.newSingleThreadExecutor();
@@ -504,15 +467,60 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         networkMonitor.register();
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (networkMonitor != null) {
-            networkMonitor.unregister();
-        }
-        if (usbReceiver != null) {
-            unregisterReceiver(usbReceiver);
-        }
+    private void initView() {
+        wallPager = findViewById(R.id.wall_pager);
+        // 功能区域
+        LinearLayout functionContainer = findViewById(R.id.function_container);
+        functionTitle = findViewById(R.id.function_title);
+
+
+        // 顶部设置按钮
+        topSettingsBar = findViewById(R.id.top_settings_lists);
+        previewPanel = findViewById(R.id.preview_panel);
+        // 常用的软件
+        favoriteAppsContainer = findViewById(R.id.favorite_apps_container);
+        favoriteAppsGrid = findViewById(R.id.favorite_apps_grid);
+        // 所有软件的布局和列表
+        allAppsContainer = findViewById(R.id.all_apps_container);
+        appListGrid = findViewById(R.id.all_apps_grid);
+
+        topSettingsBar.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.HORIZONTAL, false));
+        favoriteAppsGrid.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.HORIZONTAL, false));
+        appListGrid.setLayoutManager(new V7GridLayoutManager(this, 5));
+        topSettingsBar.setOnInBorderKeyEventListener(new ViewAnimationShake(topSettingsBar, this, 0, this));
+        favoriteAppsGrid.setOnInBorderKeyEventListener(new ViewAnimationShake(favoriteAppsGrid, this, 1, this));
+        appListGrid.setOnInBorderKeyEventListener(new ViewAnimationShake(appListGrid, this, 2, this));
+        allAppsContainer.post(() -> {
+            int screenHeight = ScreenUtils.getScreenHeight();
+            allAppsContainer.setTranslationY(screenHeight);
+            allAppsContainer.setVisibility(View.VISIBLE);
+        });
+
+        TvRecyclerView movie = findViewById(R.id.movie);
+        TvRecyclerView tv = findViewById(R.id.tv);
+        TvRecyclerView zongyi = findViewById(R.id.zongyi);
+        TvRecyclerView dongman = findViewById(R.id.dongman);
+
+
+        movie.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.VERTICAL, false));
+        tv.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.VERTICAL, false));
+        zongyi.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.VERTICAL, false));
+        dongman.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.VERTICAL, false));
+
+        movie.setOnItemListener(new TvOnItemListener());
+        tv.setOnItemListener(new TvOnItemListener());
+        zongyi.setOnItemListener(new TvOnItemListener());
+        dongman.setOnItemListener(new TvOnItemListener());
+
+        categoryMovieAdapter = new CategoryTvAdapter();
+        categoryTvAdapter = new CategoryTvAdapter();
+        categoryZongYiAdapter = new CategoryTvAdapter();
+        categoryDongManAdapter = new CategoryTvAdapter();
+        movie.setAdapter(categoryMovieAdapter);
+        tv.setAdapter(categoryTvAdapter);
+        zongyi.setAdapter(categoryZongYiAdapter);
+        dongman.setAdapter(categoryDongManAdapter);
+
     }
 
     private void initListener() {
@@ -787,8 +795,130 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
 
     private int moveToPosition = 0;
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (networkMonitor != null) {
+            networkMonitor.unregister();
+        }
+        if (cpuMonitor != null) {
+            cpuMonitor.release();
+        }
+        if (usbReceiver != null) {
+            unregisterReceiver(usbReceiver);
+        }
+    }
+
+    public void startCpuMonitor() {
+        Log.d(TAG, "startCpuMonitor: 又开始了！");
+        displayOneTimeCpuInfo();
+        cpuMonitor.startMonitoring(1000, new CpuMonitor.CpuUsageListener() {
+            @Override
+            public void onSystemCpuUsage(float usage) {
+                runOnUiThread(() -> {
+                    updateCpuDisplay("system", usage);
+                });
+            }
+
+            @Override
+            public void onAppCpuUsage(float usage) {
+                runOnUiThread(() -> {
+                    updateCpuDisplay("app", usage);
+                });
+            }
+
+            @Override
+            public void onPerCoreCpuUsage(List<Float> usages) {
+                runOnUiThread(() -> {
+                    updateCpuDisplay("cores", 0, usages);
+                });
+            }
+        });
+    }
+
+    private void updateCpuDisplay(String type, float value) {
+        updateCpuDisplay(type, value, null);
+    }
+
+    private void updateCpuDisplay(String type, float value, List<Float> coreUsages) {
+        String currentText = functionTitle.getText().toString();
+        String[] lines = currentText.split("\n");
+        StringBuilder updatedText = new StringBuilder();
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+
+            // 更新系统CPU
+            if (line.contains("系统CPU:") && "system".equals(type)) {
+                line = String.format("├─ 系统CPU: %.1f%%", value);
+            }
+            // 更新应用CPU
+            else if (line.contains("应用CPU:") && "app".equals(type)) {
+                line = String.format("├─ 应用CPU: %.1f%%", value);
+            }
+            // 更新核心CPU
+            else if (line.contains("核心CPU:") && "cores".equals(type) && coreUsages != null) {
+                StringBuilder coreStr = new StringBuilder();
+                for (int j = 0; j < coreUsages.size(); j++) {
+                    if (j > 0) coreStr.append(", ");
+                    coreStr.append(String.format("%.0f%%", coreUsages.get(j)));
+                }
+                line = "└─ 核心CPU: [" + coreStr.toString() + "]";
+            }
+            // 更新最后更新时间
+            else if (line.contains("最后更新:")) {
+                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+                String time = sdf.format(new Date());
+                line = "⏰ 最后更新: " + time;
+            }
+
+            updatedText.append(line);
+            if (i < lines.length - 1) {
+                updatedText.append("\n");
+            }
+        }
+        functionTitle.setText(updatedText.toString());
+    }
+
+    private void displayOneTimeCpuInfo() {
+        // 获取一次性的CPU信息
+        CpuMonitor.CpuInfo cpuInfo = cpuMonitor.getCpuInfo();
+        StringBuilder displayText = new StringBuilder();
+        // 标题
+        displayText.append("🔧 CPU监控面板\n");
+        displayText.append("══════════════════════\n\n");
+        displayText.append("⏰ 最后更新: 未开始监控");
+        // 实时监控区域（初始占位）
+        displayText.append("⏱ 实时监控:\n");
+        displayText.append("├─ 系统CPU: 等待数据...\n");
+        displayText.append("├─ 应用CPU: 等待数据...\n");
+        displayText.append("└─ 核心CPU: 等待数据...\n\n");
+
+        // 系统信息
+        displayText.append("📊 系统信息:\n");
+        displayText.append("├─ 系统版本: Android ").append(Build.VERSION.RELEASE).append("\n");
+        displayText.append("├─ CPU型号: ").append(cpuInfo.cpuModel).append("\n");
+        displayText.append("├─ CPU核心: ").append(cpuInfo.cpuCores).append(" 核\n");
+        displayText.append("├─ 总内存: ").append(String.format("%.2f", cpuInfo.totalMemory / 1024.0 / 1024.0 / 1024.0)).append(" GB\n");
+        displayText.append("└─ 已用内存: ").append(String.format("%.2f", cpuInfo.usedMemory / 1024.0 / 1024.0 / 1024.0)).append(" GB\n\n");
+
+
+        // CPU频率
+        if (cpuInfo.cpuFrequencies != null && cpuInfo.cpuFrequencies.length > 0) {
+            displayText.append("📈 CPU频率(MHz):\n");
+            for (int i = 0; i < cpuInfo.cpuFrequencies.length; i++) {
+                displayText.append(String.format("├─ Core%d: %d\n", i, cpuInfo.cpuFrequencies[i]));
+            }
+            displayText.append("\n");
+        }
+        // 显示到TextView
+        functionTitle.setText(displayText.toString());
+    }
+
     @SuppressLint("NotifyDataSetChanged")
     private void initData() {
+
+        cpuMonitor = CpuMonitor.getInstance(this);
         appDataBase = AppDataBase.getInstance(this);
         favoriteAppInfoDao = appDataBase.getFavoriteAppInfoDao();
         allAppsInfoDao = appDataBase.getAllAppsInfoDao();
@@ -1012,8 +1142,9 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             allAppsInfoDao.updateSortIndexByPackageName(b.getPackageName(), b.getSortIndex());
         });
     }
+
     private void showAllApps() {
-        BlurCompat.setBlur(wallPager, allAppsContainer,20);
+        BlurCompat.setBlur(wallPager, allAppsContainer, 20);
 //        previewPanel.setVisibility(View.INVISIBLE);
         topSettingsBar.setVisibility(View.GONE);
         int screenHeight = ScreenUtils.getScreenHeight();
