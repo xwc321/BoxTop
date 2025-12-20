@@ -65,10 +65,10 @@ import com.jayjd.boxtop.listeners.ViewAnimateListener;
 import com.jayjd.boxtop.listeners.ViewAnimationShake;
 import com.jayjd.boxtop.receiver.UsbBroadcastReceiver;
 import com.jayjd.boxtop.utils.AppsUtils;
+import com.jayjd.boxtop.utils.BlurCompat;
 import com.jayjd.boxtop.utils.NetworkMonitor;
 import com.jayjd.boxtop.utils.SPUtils;
 import com.jayjd.boxtop.utils.ToolUtils;
-import com.jayjd.boxtop.utils.UltimateBlurUtils;
 import com.lzy.okgo.OkGo;
 import com.lzy.okgo.callback.StringCallback;
 import com.lzy.okgo.model.Response;
@@ -371,8 +371,9 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
         permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         // 蓝牙（Android 12+）
-        permissions.add(Manifest.permission.BLUETOOTH_CONNECT);
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            permissions.add(Manifest.permission.BLUETOOTH_CONNECT);
+        }
         PermissionUtils.permission(permissions.toArray(new String[0])).rationale((activity, shouldRequest) -> {
             new MaterialAlertDialogBuilder(activity).setTitle("权限请求").setMessage("需要存储和蓝牙权限以检测U盘和蓝牙遥控器").setPositiveButton("同意", (d, w) -> shouldRequest.again(true)).setNegativeButton("拒绝", (d, w) -> shouldRequest.again(false)).show();
         }).callback(new PermissionUtils.FullCallback() {
@@ -1011,9 +1012,8 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             allAppsInfoDao.updateSortIndexByPackageName(b.getPackageName(), b.getSortIndex());
         });
     }
-
     private void showAllApps() {
-        UltimateBlurUtils.applyUltimateBlur(wallPager, 20f, 0x80FFFFFF);
+        BlurCompat.setBlur(wallPager, allAppsContainer,20);
 //        previewPanel.setVisibility(View.INVISIBLE);
         topSettingsBar.setVisibility(View.GONE);
         int screenHeight = ScreenUtils.getScreenHeight();
@@ -1024,7 +1024,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     }
 
     private void showHomeApps() {
-        UltimateBlurUtils.removeBlurAndSetTransparent(wallPager);
+        BlurCompat.cancelBlur(wallPager);
 //        previewPanel.setVisibility(View.VISIBLE);
         topSettingsBar.setVisibility(View.VISIBLE);
         int screenHeight = ScreenUtils.getScreenHeight();

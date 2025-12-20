@@ -55,7 +55,7 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
 
     implementation("com.lzy.net:okgo:3.0.4")
-    implementation("jp.wasabeef:blurry:4.0.1")
+
     implementation("androidx.palette:palette:1.0.0")
     //noinspection UseTomlInstead
     implementation("com.google.guava:guava:33.3.1-android")
