@@ -53,6 +53,7 @@
         android:layout_height="0dp"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="16dp"
+        android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@id/favorite_apps_container"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -80,7 +81,7 @@
                     android:gravity="center"
                     android:letterSpacing="0.05"
                     android:text="电影"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/md_theme_onSurface"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
@@ -115,7 +116,7 @@
                     android:gravity="center"
                     android:letterSpacing="0.05"
                     android:text="电视剧"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/md_theme_onSurface"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
@@ -150,7 +151,7 @@
                     android:gravity="center"
                     android:letterSpacing="0.05"
                     android:text="综艺"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/md_theme_onSurface"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
@@ -185,10 +186,9 @@
                     android:gravity="center"
                     android:letterSpacing="0.05"
                     android:text="动漫"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/md_theme_onSurface"
                     android:textSize="16sp"
                     android:textStyle="bold" />
-
 
                 <com.owen.tvrecyclerview.widget.TvRecyclerView
                     android:id="@+id/dongman"
@@ -207,16 +207,27 @@
         </LinearLayout>
     </FrameLayout>
     <!--所有应用列表-->
-    <FrameLayout
+    <LinearLayout
         android:id="@+id/all_apps_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_margin="16dp"
-        android:background="@drawable/bg_blur_card"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:letterSpacing="0.1"
+            android:padding="8dp"
+            android:text="应用列表"
+            android:textColor="@color/md_theme_onBackground"
+            android:textSize="26sp"
+            android:textStyle="bold" />
 
         <com.owen.tvrecyclerview.widget.TvRecyclerView
             android:id="@+id/all_apps_grid"
@@ -229,7 +240,7 @@
             app:tv_selectedItemIsCentered="true"
             app:tv_verticalSpacingWithMargins="8dp"
             tools:listitem="@layout/activity_icon_item" />
-    </FrameLayout>
+    </LinearLayout>
     <!--常用软件列表-->
     <FrameLayout
         android:id="@+id/favorite_apps_container"

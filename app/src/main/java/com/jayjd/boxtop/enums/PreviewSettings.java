@@ -9,7 +9,7 @@ public enum PreviewSettings {
     MOVE("移动软件"),
     HIDE("隐藏软件"),
     SHOW("显示软件"),
-    DELETE("删除软件"),
+    DELETE("删除常用"),
     UNINSTALL("卸载软件");
     private final String displayName;
 
@@ -19,7 +19,7 @@ public enum PreviewSettings {
 
     public static PreviewSettings[] getFavoriteSettings(boolean system) {
         if (system) {
-            return new PreviewSettings[]{START, VIEW, HIDE, MOVE, DELETE};
+            return new PreviewSettings[]{START, VIEW, MOVE, DELETE};
         }
         return new PreviewSettings[]{START, VIEW, HIDE, MOVE, DELETE, UNINSTALL};
     }

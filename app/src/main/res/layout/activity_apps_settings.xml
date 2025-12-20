@@ -92,6 +92,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/app_info_container"
         app:tv_verticalSpacingWithMargins="8dp"
+        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+        app:spanCount="2"
         tools:itemCount="3"
         tools:listitem="@layout/item_preview_settings" />
 

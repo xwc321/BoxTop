@@ -25,6 +25,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -67,6 +68,7 @@ import com.jayjd.boxtop.utils.AppsUtils;
 import com.jayjd.boxtop.utils.NetworkMonitor;
 import com.jayjd.boxtop.utils.SPUtils;
 import com.jayjd.boxtop.utils.ToolUtils;
+import com.jayjd.boxtop.utils.UltimateBlurUtils;
 import com.lzy.okgo.OkGo;
 import com.lzy.okgo.callback.StringCallback;
 import com.lzy.okgo.model.Response;
@@ -86,7 +88,7 @@ import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity implements ViewAnimateListener {
     private static final String TAG = "MainActivity";
-    FrameLayout allAppsContainer;
+    LinearLayout allAppsContainer;
     FrameLayout favoriteAppsContainer;
     private final List<AppInfo> favoriteApps = new ArrayList<>();
     TvRecyclerView appListGrid;
@@ -285,6 +287,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         allAppsContainer.post(() -> {
             int screenHeight = ScreenUtils.getScreenHeight();
             allAppsContainer.setTranslationY(screenHeight);
+            allAppsContainer.setVisibility(View.VISIBLE);
         });
 
         TvRecyclerView movie = findViewById(R.id.movie);
@@ -542,7 +545,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             Log.d("MainActivity", "onItemClick position = " + position);
             AppInfo appInfo = parent.getItem(position);
             if (appInfo.getPackageName().isEmpty()) {
-                previewPanel.setVisibility(View.INVISIBLE);
+//                previewPanel.setVisibility(View.INVISIBLE);
                 if (appInfo.getName().equals("系统应用")) {
                     showSystemApps();
                 } else if (appInfo.getName().equals("壁纸")) {
@@ -657,6 +660,9 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         int styleId;
         if (titleName.equals("应用设置")) styleId = R.style.CustomDialogTheme;
         else styleId = R.style.CustomAppDialogTheme;
+        TextView allAppsTitle = rootView.findViewById(R.id.all_apps_title);
+        if (allAppsTitle != null)
+            allAppsTitle.setText(titleName);
         Dialog dialog = new Dialog(context, styleId);
         dialog.setContentView(rootView);
         dialog.setOnKeyListener((dialog1, keyCode, event) -> {
@@ -710,7 +716,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         TvRecyclerView previewSettingsRecyclerview = inflate.findViewById(R.id.preview_settings_recyclerview);
 
         previewSettingsRecyclerview.setOnInBorderKeyEventListener(new ViewAnimationShake(previewSettingsRecyclerview, this));
-        previewSettingsRecyclerview.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.VERTICAL, false));
+        previewSettingsRecyclerview.setLayoutManager(new V7GridLayoutManager(this, 2));
         previewSettingsRecyclerview.setOnItemListener(new TvOnItemListener());
         PreviewSettingsAdapter previewSettingsAdapter = new PreviewSettingsAdapter();
         previewSettingsRecyclerview.setAdapter(previewSettingsAdapter);
@@ -1007,7 +1013,8 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     }
 
     private void showAllApps() {
-        previewPanel.setVisibility(View.INVISIBLE);
+        UltimateBlurUtils.applyUltimateBlur(wallPager, 20f, 0x80FFFFFF);
+//        previewPanel.setVisibility(View.INVISIBLE);
         topSettingsBar.setVisibility(View.GONE);
         int screenHeight = ScreenUtils.getScreenHeight();
         Log.d(TAG, "showAllApps: " + screenHeight);
@@ -1017,7 +1024,8 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     }
 
     private void showHomeApps() {
-        previewPanel.setVisibility(View.VISIBLE);
+        UltimateBlurUtils.removeBlurAndSetTransparent(wallPager);
+//        previewPanel.setVisibility(View.VISIBLE);
         topSettingsBar.setVisibility(View.VISIBLE);
         int screenHeight = ScreenUtils.getScreenHeight();
         favoriteAppsContainer.animate().translationY(0).setDuration(500).start();
