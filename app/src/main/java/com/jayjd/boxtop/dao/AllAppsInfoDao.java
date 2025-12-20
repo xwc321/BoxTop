@@ -1,0 +1,41 @@
+package com.jayjd.boxtop.dao;
+
+import androidx.room.Dao;
+import androidx.room.Delete;
+import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
+import androidx.room.Query;
+import androidx.room.Update;
+
+import com.jayjd.boxtop.entity.AppInfo;
+
+import java.util.List;
+
+@Dao
+public interface AllAppsInfoDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insert(AppInfo appInfo);
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertAll(List<AppInfo> appInfos);
+
+    @Update
+    void update(AppInfo favoriteAppInfo);
+
+    // 根据包名修改排序
+    @Query("UPDATE app_info SET sortIndex = :sortIndex WHERE packageName = :packageName")
+    void updateSortIndexByPackageName(String packageName, int sortIndex);
+
+    @Delete
+    void delete(AppInfo favoriteAppInfo);
+
+    // 根据包名 修改应用是否隐藏
+    @Query("UPDATE app_info SET isHidden = :isHidden WHERE packageName = :packageName")
+    void updateIsHiddenByPackageName(String packageName, boolean isHidden);
+
+    @Query("DELETE FROM app_info WHERE packageName = :packageName")
+    void deleteByPackageName(String packageName);
+
+    @Query("SELECT * FROM app_info")
+    List<AppInfo> getAllAppInfo();
+}

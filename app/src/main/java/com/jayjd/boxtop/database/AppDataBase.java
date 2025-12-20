@@ -6,10 +6,12 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
+import com.jayjd.boxtop.dao.AllAppsInfoDao;
 import com.jayjd.boxtop.dao.FavoriteAppInfoDao;
 import com.jayjd.boxtop.entity.AppInfo;
+import com.jayjd.boxtop.entity.FavoriteApp;
 
-@Database(entities = {AppInfo.class}, version = 1, exportSchema = false)
+@Database(entities = {AppInfo.class, FavoriteApp.class}, version = 1, exportSchema = false)
 public abstract class AppDataBase extends RoomDatabase {
 
     private static AppDataBase appDataBase;
@@ -27,5 +29,6 @@ public abstract class AppDataBase extends RoomDatabase {
 
     public abstract FavoriteAppInfoDao getFavoriteAppInfoDao();
 
+    public abstract AllAppsInfoDao getAllAppsInfoDao();
 
 }

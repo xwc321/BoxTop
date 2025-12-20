@@ -38,6 +38,8 @@ public class AppInfo implements Serializable {
     private int minSdkVersion;
     private int targetSdkVersion;
     private boolean isSystem;
+    private boolean isHidden;
+
     @Ignore
     private AppType appType;
 }

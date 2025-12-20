@@ -50,9 +50,11 @@ import com.google.gson.Gson;
 import com.jayjd.boxtop.adapter.AppIconAdapter;
 import com.jayjd.boxtop.adapter.PreviewSettingsAdapter;
 import com.jayjd.boxtop.adapter.SettingsIconAdapter;
+import com.jayjd.boxtop.dao.AllAppsInfoDao;
 import com.jayjd.boxtop.dao.FavoriteAppInfoDao;
 import com.jayjd.boxtop.database.AppDataBase;
 import com.jayjd.boxtop.entity.AppInfo;
+import com.jayjd.boxtop.entity.FavoriteApp;
 import com.jayjd.boxtop.entity.HotSearchEntity;
 import com.jayjd.boxtop.enums.PreviewSettings;
 import com.jayjd.boxtop.enums.TopSettingsIcons;
@@ -95,12 +97,12 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     SettingsIconAdapter topSettingsAdapter;
     private List<AppInfo> allApps = new ArrayList<>();
     private List<AppInfo> systemApps = new ArrayList<>();
+    AllAppsInfoDao allAppsInfoDao;
     private boolean isMoveApp = false;
 
 
     AppDataBase appDataBase;
     FavoriteAppInfoDao favoriteAppInfoDao;
-
     private final UsbBroadcastReceiver usbReceiver = new UsbBroadcastReceiver(new UsbDriveListener() {
         @SuppressLint("NotifyDataSetChanged")
         @Override
@@ -175,7 +177,10 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                 favoriteApps.remove(fav);
                 favoriteAppsAdapter.setItems(favoriteApps);
                 favoriteAppsAdapter.notifyDataSetChanged();
-                new Thread(() -> favoriteAppInfoDao.deleteByPackageName(pkg)).start();
+                new Thread(() -> {
+                    favoriteAppInfoDao.deleteByPackageName(pkg);
+                    allAppsInfoDao.deleteByPackageName(pkg);
+                }).start();
             }
         }
 
@@ -226,9 +231,10 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             favoriteAppsAdapter.setItems(favoriteApps);
             favoriteAppsAdapter.notifyDataSetChanged();
 
-            new Thread(() -> favoriteAppInfoDao.update(old)).start();
+            new Thread(() -> allAppsInfoDao.update(newApp)).start();
         }
     });
+    private List<AppInfo> hiddenApps = new ArrayList<>();
     ImageView wallPager;
 
     @Override
@@ -273,7 +279,6 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         topSettingsBar.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.HORIZONTAL, false));
         favoriteAppsGrid.setLayoutManager(new V7LinearLayoutManager(this, V7LinearLayoutManager.HORIZONTAL, false));
         appListGrid.setLayoutManager(new V7GridLayoutManager(this, 5));
-
         topSettingsBar.setOnInBorderKeyEventListener(new ViewAnimationShake(topSettingsBar, this, 0, this));
         favoriteAppsGrid.setOnInBorderKeyEventListener(new ViewAnimationShake(favoriteAppsGrid, this, 1, this));
         appListGrid.setOnInBorderKeyEventListener(new ViewAnimationShake(appListGrid, this, 2, this));
@@ -529,6 +534,8 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         });
         appListAdapter.setOnItemLongClickListener((parent, view, position) -> {
             Log.d("MainActivity", "onItemChildLongClick position = " + position);
+            AppInfo appInfo = parent.getItem(position);
+            if (appInfo.isSystem()) return false;
             return showAppSettingsDialog(parent, position, PreviewSettings.getAllAppsSettings());
         });
         appListAdapter.setOnItemClickListener((parent, view, position) -> {
@@ -540,6 +547,8 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                     showSystemApps();
                 } else if (appInfo.getName().equals("壁纸")) {
                     showWallPager();
+                } else if (appInfo.getName().equals("隐私空间")) {
+                    showPrivacySpace();
                 }
             } else {
                 AppUtils.launchApp(appInfo.getPackageName());
@@ -548,7 +557,8 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
 
         favoriteAppsAdapter.setOnItemLongClickListener((baseQuickAdapter, view, position) -> {
             Log.d("MainActivity", "onItemChildLongClick position = " + position);
-            return showAppSettingsDialog(baseQuickAdapter, position, PreviewSettings.getFavoriteSettings());
+            AppInfo item = baseQuickAdapter.getItem(position);
+            return showAppSettingsDialog(baseQuickAdapter, position, PreviewSettings.getFavoriteSettings(item.isSystem()));
         });
         favoriteAppsAdapter.setOnItemClickListener((baseQuickAdapter, view, i) -> {
             if (isMoveApp) {
@@ -590,6 +600,30 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         startActivity(new Intent(this, WallPagerActivity.class));
     }
 
+    private void showPrivacySpace() {
+        View inflate = LayoutInflater.from(this).inflate(R.layout.activity_dialog_all_app, null);
+        TvRecyclerView allDialogGrid = inflate.findViewById(R.id.all_dialog_grid);
+        allDialogGrid.setLayoutManager(new V7GridLayoutManager(this, 5));
+        AppIconAdapter dialogAppIconAdapter = new AppIconAdapter();
+        allDialogGrid.setAdapter(dialogAppIconAdapter);
+        dialogAppIconAdapter.setItems(hiddenApps);
+        dialogAppIconAdapter.setOnItemLongClickListener((baseQuickAdapter, view2, i) -> {
+            Log.d("MainActivity", "onItemChildLongClick position = " + i);
+            return showAppSettingsDialog(baseQuickAdapter, i, PreviewSettings.getHideAppsSettings());
+        });
+        dialogAppIconAdapter.setOnItemClickListener((baseQuickAdapter1, view1, i1) -> {
+            AppInfo item = baseQuickAdapter1.getItem(i1);
+            if (item.getPackageName().isEmpty()) {
+                return;
+            }
+            AppUtils.launchApp(item.getPackageName());
+        });
+        allDialogGrid.setOnItemListener(new TvOnItemListener());
+        allDialogGrid.requestFocus();
+        allAppsContainer.setVisibility(View.INVISIBLE);
+        showMaterialAlertDialog(this, "隐私空间", inflate);
+    }
+
     private void showSystemApps() {
         View inflate = LayoutInflater.from(this).inflate(R.layout.activity_dialog_all_app, null);
         TvRecyclerView allDialogGrid = inflate.findViewById(R.id.all_dialog_grid);
@@ -599,6 +633,8 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         dialogAppIconAdapter.setItems(systemApps);
         dialogAppIconAdapter.setOnItemLongClickListener((baseQuickAdapter, view2, i) -> {
             Log.d("MainActivity", "onItemChildLongClick position = " + i);
+            AppInfo appInfo = baseQuickAdapter.getItem(i);
+            if (appInfo.isSystem()) return false;
             return showAppSettingsDialog(baseQuickAdapter, i, PreviewSettings.getAllAppsSettings());
         });
         dialogAppIconAdapter.setOnItemClickListener((baseQuickAdapter1, view1, i1) -> {
@@ -626,6 +662,9 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         dialog.setOnKeyListener((dialog1, keyCode, event) -> {
             if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN) {
                 if (titleName.equals("系统应用")) {
+                    allAppsContainer.setVisibility(View.VISIBLE);
+                    appListGrid.requestFocus();
+                } else if (titleName.equals("隐私空间")) {
                     allAppsContainer.setVisibility(View.VISIBLE);
                     appListGrid.requestFocus();
                 } else {
@@ -687,6 +726,34 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                 case VIEW:
                     AppUtils.launchAppDetailsSettings(appInfo.getPackageName());
                     break;
+                case SHOW:
+                    if (appInfo.isSystem()) {
+                        Toast.makeText(this, "系统应用无法显示", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    appInfo.setHidden(false);
+                    appListAdapter.add(0, appInfo);
+                    appListAdapter.notifyDataSetChanged();
+                    parent.remove(appInfo);
+                    parent.notifyDataSetChanged();
+                    new Thread(() -> allAppsInfoDao.updateIsHiddenByPackageName(appInfo.getPackageName(), false)).start();
+                    break;
+                case HIDE:
+                    if (appInfo.isSystem()) {
+                        Toast.makeText(this, "系统应用无法隐藏", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    favoriteAppsAdapter.remove(appInfo);
+                    favoriteAppsAdapter.notifyDataSetChanged();
+                    appListAdapter.remove(appInfo);
+                    appListAdapter.notifyDataSetChanged();
+                    appInfo.setHidden(true);
+                    hiddenApps.add(appInfo);
+                    new Thread(() -> {
+                        favoriteAppInfoDao.deleteByPackageName(appInfo.getPackageName());
+                        allAppsInfoDao.updateIsHiddenByPackageName(appInfo.getPackageName(), true);
+                    }).start();
+                    break;
                 case MOVE:
                     isMoveApp = true;
                     movePosition = position;
@@ -695,7 +762,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                     AppInfo favoriteAppInfo = favoriteAppsAdapter.getItem(position);
                     favoriteAppsAdapter.remove(favoriteAppInfo);
                     favoriteAppsAdapter.notifyDataSetChanged();
-                    new Thread(() -> favoriteAppInfoDao.delete(appInfo)).start();
+                    new Thread(() -> favoriteAppInfoDao.deleteByPackageName(appInfo.getPackageName())).start();
                     break;
                 case UNINSTALL:
                     if (appInfo.isSystem()) {
@@ -717,6 +784,8 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     private void initData() {
         appDataBase = AppDataBase.getInstance(this);
         favoriteAppInfoDao = appDataBase.getFavoriteAppInfoDao();
+        allAppsInfoDao = appDataBase.getAllAppsInfoDao();
+
         topSettingsAdapter = new SettingsIconAdapter();
         topSettingsAdapter.setItemAnimation(BaseQuickAdapter.AnimationType.SlideInLeft);
         appListAdapter = new AppIconAdapter();
@@ -729,13 +798,35 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         topSettingsAdapter.setItems(new ArrayList<>(List.of(TopSettingsIcons.getTopSettings())));
 
         new Thread(() -> {
-            List<AppInfo> tempAllApps = AppsUtils.getAppsInfo(this);
+            List<AppInfo> tempAllApps = allAppsInfoDao.getAllAppInfo();
+            if (tempAllApps.isEmpty()) {
+                tempAllApps = AppsUtils.getAppsInfo(this);
+                allAppsInfoDao.insertAll(tempAllApps);
+            }
+            // 所有的应用列表 过滤掉系统应用和隐藏应用
             allApps = Lists.newArrayList(Iterables.filter(tempAllApps, appInfo -> {
                 if (appInfo != null) {
-                    return !appInfo.isSystem();
+                    return !appInfo.isSystem() && !appInfo.isHidden();
                 }
                 return false;
             }));
+            allApps.add(allApps.size(), ToolUtils.getEmptyAppInfo("壁纸", ResourceUtils.getDrawable(R.drawable.ic_wall_art_24dp), Color.parseColor("#EF4444")));
+            allApps.add(allApps.size(), ToolUtils.getEmptyAppInfo("隐私空间", ResourceUtils.getDrawable(R.drawable.ic_lock_24dp), Color.parseColor("#2B2F4A")));
+            allApps.add(allApps.size(), ToolUtils.getEmptyAppInfo("系统应用", ResourceUtils.getDrawable(R.drawable.ic_apps_24dp), Color.parseColor("#0EA5E9")));
+            // 从常用表根据包名获取详细的应用软件信息
+            List<AppInfo> favoriteAppInfos = favoriteAppInfoDao.getFavoriteApps();
+            Collections.sort(favoriteAppInfos, (o1, o2) -> {
+                int index1 = o1.getSortIndex();
+                int index2 = o2.getSortIndex();
+                return Integer.compare(index1, index2);
+            });
+            favoriteApps.addAll(favoriteAppInfos);
+            favoriteApps.add(favoriteApps.size(), ToolUtils.getEmptyAppInfo("添加应用", ResourceUtils.getDrawable(R.drawable.ic_add_24dp), Color.parseColor("#263238")));
+            for (AppInfo favoriteApp : favoriteApps) {
+                Log.d(TAG, "initData: " + favoriteApp);
+            }
+
+            // 根据所有应用列表 过滤出系统应用 并移除系统不可启动的应用
             systemApps = Lists.newArrayList(Iterables.filter(tempAllApps, AppAllInfo -> AppAllInfo != null && AppAllInfo.isSystem()));
             Iterator<AppInfo> iterator = systemApps.iterator();
             while (iterator.hasNext()) {
@@ -745,20 +836,8 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                     iterator.remove();
                 }
             }
-            allApps.add(allApps.size(), ToolUtils.getEmptyAppInfo("壁纸", ResourceUtils.getDrawable(R.drawable.ic_wall_art_24dp), Color.parseColor("#EF4444")));
-            allApps.add(allApps.size(), ToolUtils.getEmptyAppInfo("系统应用", ResourceUtils.getDrawable(R.drawable.ic_apps_24dp), Color.parseColor("#0EA5E9")));
-            List<AppInfo> favoriteAppInfos = favoriteAppInfoDao.getAllFavoriteAppInfo();
-            Collections.sort(favoriteAppInfos, (o1, o2) -> {
-                int index1 = o1.getSortIndex();
-                int index2 = o2.getSortIndex();
-                return Integer.compare(index1, index2);
-            });
-            for (AppInfo favoriteAppInfo : favoriteAppInfos) {
-                Log.d(TAG, "initData: " + favoriteAppInfo.getName() + " " + favoriteAppInfo.getSortIndex());
-            }
-
-            favoriteApps.addAll(favoriteAppInfos);
-            favoriteApps.add(favoriteApps.size(), ToolUtils.getEmptyAppInfo("添加应用", ResourceUtils.getDrawable(R.drawable.ic_add_24dp), Color.parseColor("#263238")));
+            // 过滤出所有隐藏的应用列表
+            hiddenApps = Lists.newArrayList(Iterables.filter(tempAllApps, AppAllInfo -> AppAllInfo != null && AppAllInfo.isHidden()));
             Log.d(TAG, "initData: 数据处理完成");
             runOnUiThread(() -> {
                 Log.d(TAG, "initData: 更新UI");
@@ -846,7 +925,10 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
                 int itemCount = favoriteAppsAdapter.getItemCount();
                 favoriteAppsAdapter.add(itemCount - 1, adapterItem);
                 adapterItem.setSortIndex(itemCount - 1);
-                new Thread(() -> favoriteAppInfoDao.insert(adapterItem)).start();
+                new Thread(() -> {
+                    allAppsInfoDao.updateSortIndexByPackageName(adapterItem.getPackageName(), adapterItem.getSortIndex());
+                    favoriteAppInfoDao.insert(new FavoriteApp(adapterItem.getPackageName()));
+                }).start();
             } else {
                 Toast.makeText(this, adapterItem.getName() + " 已添加", Toast.LENGTH_SHORT).show();
             }
@@ -882,12 +964,19 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     }
 
     private void moveItem() {
-        if (movePosition == moveToPosition) return;
+        if (movePosition == moveToPosition) {
+            Log.d(TAG, "moveItem: " + movePosition + " " + moveToPosition);
+            return;
+
+        }
 
         List<AppInfo> list = favoriteAppsAdapter.getItems();
 
         AppInfo fromItem = list.get(movePosition);
         AppInfo toItem = list.get(moveToPosition);
+
+        Log.d(TAG, "moveItem: " + fromItem.getId() + " " + fromItem.getName() + " " + fromItem.getSortIndex());
+        Log.d(TAG, "moveItem: " + toItem.getId() + " " + toItem.getName() + " " + toItem.getSortIndex());
 
         // 1. 交换 sortIndex（以 UI 顺序为准）
         int fromIndex = fromItem.getSortIndex();
@@ -909,8 +998,11 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
 
     private void updateSortIndexAsync(AppInfo a, AppInfo b) {
         dbExecutor.execute(() -> {
-            favoriteAppInfoDao.update(a);
-            favoriteAppInfoDao.update(b);
+//            allAppsInfoDao.update(a);
+//            allAppsInfoDao.update(b);
+            Log.d(TAG, "updateSortIndexAsync: " + a.getSortIndex() + " " + b.getSortIndex());
+            allAppsInfoDao.updateSortIndexByPackageName(a.getPackageName(), a.getSortIndex());
+            allAppsInfoDao.updateSortIndexByPackageName(b.getPackageName(), b.getSortIndex());
         });
     }
 

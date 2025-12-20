@@ -1,30 +1,24 @@
 package com.jayjd.boxtop.dao;
 
 import androidx.room.Dao;
-import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
-import androidx.room.Update;
 
 import com.jayjd.boxtop.entity.AppInfo;
+import com.jayjd.boxtop.entity.FavoriteApp;
 
 import java.util.List;
 
 @Dao
 public interface FavoriteAppInfoDao {
     @Insert
-    void insert(AppInfo favoriteAppInfo);
+    void insert(FavoriteApp favoriteApp);
 
-    @Update
-    void update(AppInfo favoriteAppInfo);
-
-    @Delete
-    void delete(AppInfo favoriteAppInfo);
-
-    @Query("DELETE FROM app_info WHERE packageName = :packageName")
+    // 根据包名删除 收藏应用
+    @Query("DELETE FROM favorite_app WHERE packageName = :packageName")
     void deleteByPackageName(String packageName);
 
-    @Query("SELECT * FROM app_info")
-    List<AppInfo> getAllFavoriteAppInfo();
+    @Query("SELECT DISTINCT a.* FROM app_info a JOIN favorite_app f ON a.packageName = f.packageName")
+    List<AppInfo> getFavoriteApps();
 
 }

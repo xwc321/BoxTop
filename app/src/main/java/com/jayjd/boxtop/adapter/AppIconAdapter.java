@@ -14,7 +14,7 @@ import com.chad.library.adapter4.viewholder.QuickViewHolder;
 import com.google.android.material.card.MaterialCardView;
 import com.jayjd.boxtop.R;
 import com.jayjd.boxtop.entity.AppInfo;
-import com.jayjd.boxtop.utils.SPUtils;
+import com.jayjd.boxtop.utils.App;
 import com.jayjd.boxtop.utils.ToolUtils;
 
 public class AppIconAdapter extends BaseQuickAdapter<AppInfo, QuickViewHolder> {
@@ -30,7 +30,7 @@ public class AppIconAdapter extends BaseQuickAdapter<AppInfo, QuickViewHolder> {
         if (appInfo != null) {
             MaterialCardView cardView = quickViewHolder.getView(R.id.card);
             cardView.setCardBackgroundColor(appInfo.getCardColor());
-            boolean tvShow = (boolean) SPUtils.get(getContext(), "tv_show", false);
+            boolean tvShow = App.isShowAppName(getContext());
             quickViewHolder.setText(R.id.tv_name, !tvShow ? appInfo.getName() : "");
             quickViewHolder.setGone(R.id.tv_name, tvShow);
             if (appInfo.getPackageName().isEmpty()) {

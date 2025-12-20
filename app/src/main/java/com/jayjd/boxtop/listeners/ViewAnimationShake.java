@@ -9,6 +9,7 @@ import android.view.animation.AnimationUtils;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.jayjd.boxtop.R;
+import com.jayjd.boxtop.utils.App;
 import com.owen.tvrecyclerview.widget.TvRecyclerView;
 
 public class ViewAnimationShake implements TvRecyclerView.OnInBorderKeyEventListener {
@@ -57,7 +58,9 @@ public class ViewAnimationShake implements TvRecyclerView.OnInBorderKeyEventList
                 boolean handled = false;
                 View nextFocused = FocusFinder.getInstance().findNextFocus(tvRecyclerView, focused, direction);
                 if (nextFocused == null || nextFocused == focused) {
-                    shakeX(focused);
+                    if (App.isPaid(context)) {
+                        shakeX(focused);
+                    }
                     handled = true;
                 }
                 return handled;
