@@ -146,6 +146,16 @@
                 tools:listitem="@layout/item_function" />
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/dot_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="8dp"
+            app:layout_constraintEnd_toEndOf="@id/view_pager_container"
+            app:layout_constraintStart_toStartOf="@id/view_pager_container"
+            app:layout_constraintTop_toBottomOf="@id/view_pager_container" />
+
         <FrameLayout
             android:id="@+id/view_pager_container"
             android:layout_width="0dp"
@@ -160,7 +170,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.1"
-            app:layout_constraintWidth_percent=".4">
+            app:layout_constraintWidth_percent=".42">
 
             <androidx.viewpager2.widget.ViewPager2
                 android:id="@+id/view_pager_cards"
@@ -168,14 +178,6 @@
                 android:layout_height="match_parent"
                 tools:targetApi="31" />
 
-            <LinearLayout
-                android:id="@+id/dot_container"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="start|bottom"
-                android:focusable="false"
-                android:orientation="horizontal"
-                android:padding="12dp" />
         </FrameLayout>
 
         <com.owen.tvrecyclerview.widget.TvRecyclerView
