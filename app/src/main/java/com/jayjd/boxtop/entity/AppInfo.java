@@ -28,7 +28,7 @@ public class AppInfo implements Serializable {
     private String appBannerBase64;
     private String appIconBase64;
 
-    private boolean isBanner;
+    private int isBanner;
 
     private int openAppCount;
     private int sortIndex;

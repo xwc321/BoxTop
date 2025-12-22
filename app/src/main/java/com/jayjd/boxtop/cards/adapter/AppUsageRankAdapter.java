@@ -46,7 +46,7 @@ public class AppUsageRankAdapter extends BaseQuickAdapter<AppInfo, QuickViewHold
 
         ImageView ivIcon = quickViewHolder.getView(R.id.iv_icon);
         Drawable drawable;
-        if (appInfo.isBanner()) {
+        if (appInfo.getIsBanner() == 1) {
             drawable = ToolUtils.getBase64ToDrawable(appInfo.getAppBannerBase64());
         } else {
             drawable = ToolUtils.getBase64ToDrawable(appInfo.getAppIconBase64());

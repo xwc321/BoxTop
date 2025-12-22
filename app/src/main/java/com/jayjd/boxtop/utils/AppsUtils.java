@@ -108,7 +108,7 @@ public class AppsUtils {
             String bannerStr = EncodeUtils.base64Encode2String(bytes);
             appInfo.setAppBannerBase64(bannerStr);
             appInfo.setAppBanner(banner);
-            appInfo.setBanner(true);
+            appInfo.setIsBanner(1);
         } else {
             if (appInfo.getAppIcon() != null) {
                 byte[] bytes = ConvertUtils.drawable2Bytes(appInfo.getAppIcon());

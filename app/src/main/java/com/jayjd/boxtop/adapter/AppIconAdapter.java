@@ -41,11 +41,11 @@ public class AppIconAdapter extends BaseQuickAdapter<AppInfo, QuickViewHolder> {
                 Glide.with(getContext()).load(appInfo.getAppBanner()).into(imageView);
             } else {
                 quickViewHolder.setGone(R.id.iv_add, true);
-                quickViewHolder.setGone(R.id.app_icon, appInfo.isBanner());
-                quickViewHolder.setGone(R.id.app_banner, !appInfo.isBanner());
+                quickViewHolder.setGone(R.id.app_icon, appInfo.getIsBanner() == 1);
+                quickViewHolder.setGone(R.id.app_banner, appInfo.getIsBanner() == 0);
                 Drawable drawable;
                 ImageView imageView;
-                if (appInfo.isBanner()) {
+                if (appInfo.getIsBanner() == 1) {
                     imageView = quickViewHolder.getView(R.id.app_banner);
                     drawable = ToolUtils.getBase64ToDrawable(appInfo.getAppBannerBase64());
                 } else {

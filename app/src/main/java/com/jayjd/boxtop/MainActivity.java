@@ -750,7 +750,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         card.setCardBackgroundColor(appInfo.getCardColor());
         Drawable drawable;
         ImageView imageView;
-        if (appInfo.isBanner()) {
+        if (appInfo.getIsBanner() == 1) {
             inflate.findViewById(R.id.preview_app_icon).setVisibility(View.GONE);
             imageView = inflate.findViewById(R.id.preview_banner_icon);
             imageView.setVisibility(View.VISIBLE);
