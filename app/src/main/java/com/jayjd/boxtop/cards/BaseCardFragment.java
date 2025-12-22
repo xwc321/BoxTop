@@ -84,4 +84,12 @@ public abstract class BaseCardFragment extends Fragment {
      */
     protected void onFragmentInvisible() {
     }
+
+    protected int getProgressDrawable(int percent) {
+        int color;
+        if (percent < 70) color = 0xFF4CAF50;
+        else if (percent < 85) color = 0xFFFF9800;
+        else color = 0xFFF44336;
+        return color;
+    }
 }

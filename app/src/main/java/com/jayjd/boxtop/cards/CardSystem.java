@@ -22,14 +22,13 @@ public class CardSystem extends BaseCardFragment {
 
     AppUsageRankAdapter adapter;
     AllAppsInfoDao allAppsInfoDao;
-    private TvRecyclerView recyclerView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View root = inflater.inflate(R.layout.fragment_card_system, container, false);
-        recyclerView = root.findViewById(R.id.rv_app_rank);
+        TvRecyclerView recyclerView = root.findViewById(R.id.rv_app_rank);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setItemAnimator(null);
 

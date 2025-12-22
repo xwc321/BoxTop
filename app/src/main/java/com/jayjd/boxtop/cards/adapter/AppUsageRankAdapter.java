@@ -17,7 +17,7 @@ import com.jayjd.boxtop.entity.AppInfo;
 import com.jayjd.boxtop.utils.ToolUtils;
 
 public class AppUsageRankAdapter extends BaseQuickAdapter<AppInfo, QuickViewHolder> {
-    int maxCount = 0;
+    long maxCount = 0;
 
     @NonNull
     @Override
@@ -52,12 +52,21 @@ public class AppUsageRankAdapter extends BaseQuickAdapter<AppInfo, QuickViewHold
             drawable = ToolUtils.getBase64ToDrawable(appInfo.getAppIconBase64());
         }
         Glide.with(quickViewHolder.itemView).load(drawable).into(ivIcon);
-        quickViewHolder.setText(R.id.tv_count, String.valueOf(appInfo.getOpenAppCount()));
 
+        String displayText;
+        long count = appInfo.getOpenAppCount() * 10000;
+        if (count >= 1_000_000) {
+            displayText = String.format("使用:%.1fM", count / 1_000_000f);
+        } else if (count >= 1_000) {
+            displayText = String.format("使用:%.1fk", count / 1_000f);
+        } else {
+            displayText = String.format("使用:%d次", count);
+        }
+        quickViewHolder.setText(R.id.tv_count, displayText);
 
         View bar = quickViewHolder.getView(R.id.view_bar);
 
-        int maxWidth = dp(quickViewHolder.itemView, 120);
+        int maxWidth = dp(quickViewHolder.itemView, 100);
         int width = (int) (maxWidth * (appInfo.getOpenAppCount() * 1f / maxCount));
 
         ViewGroup.LayoutParams lp = bar.getLayoutParams();

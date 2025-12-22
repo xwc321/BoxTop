@@ -1,7 +1,7 @@
 package com.jayjd.boxtop.cards;
 
 import android.animation.ObjectAnimator;
-import android.graphics.drawable.Drawable;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
@@ -11,8 +11,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-
-import androidx.core.content.ContextCompat;
 
 import com.jayjd.boxtop.R;
 
@@ -68,7 +66,7 @@ public class CardStorage extends BaseCardFragment {
             long used = total - available;
             int percent = (int) ((used * 100f) / total);
 
-            pbUsb.setProgressDrawable(ContextCompat.getDrawable(appContext, getProgressDrawable(percent)));
+            pbUsb.setProgressTintList(ColorStateList.valueOf(getProgressDrawable(percent)));
             pbUsb.setProgress(percent);
             tvUsbPercent.setText(percent + "%");
             tvUsbSize.setText(formatSize(used) + " / " + formatSize(total));
@@ -100,8 +98,7 @@ public class CardStorage extends BaseCardFragment {
 
             int percent = (int) ((usedBytes * 100f) / totalBytes);
             // 根据使用率变色（可选）
-            Drawable drawable = ContextCompat.getDrawable(appContext, getProgressDrawable(percent));
-            pbStorage.setProgressDrawable(drawable);
+            pbStorage.setProgressTintList(ColorStateList.valueOf(getProgressDrawable(percent)));
 
             // UI 更新
             pbStorage.setProgress(percent);
@@ -121,15 +118,7 @@ public class CardStorage extends BaseCardFragment {
         return String.format(Locale.getDefault(), "%.1f GB", gb);
     }
 
-    private int getProgressDrawable(int percent) {
-        if (percent < 70) {
-            return R.drawable.bg_storage_progress_ring;
-        } else if (percent < 85) {
-            return R.drawable.bg_storage_progress_ring_orange;
-        } else {
-            return R.drawable.bg_storage_progress_ring_red;
-        }
-    }
+
 
     @Override
     protected void onFragmentVisible() {

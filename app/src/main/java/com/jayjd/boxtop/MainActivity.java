@@ -268,14 +268,12 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     protected void onResume() {
         super.onResume();
         initWallPager();
-//        startCpuMonitor();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        Log.d(TAG, "onPause: 暂停了！");
-        if (cpuMonitor != null) cpuMonitor.stopMonitoring();
+
     }
 
     private final Executor dbExecutor = Executors.newSingleThreadExecutor();
@@ -495,7 +493,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             v.setElevation(hasFocus ? 20f : 0f);
         });
         // ❗TV 必须关掉用户滑动（用遥控器控制）
-        viewPagerCards.setUserInputEnabled(false);
+//        viewPagerCards.setUserInputEnabled(false);
 
         // 预加载（避免切换卡顿）
         viewPagerCards.setOffscreenPageLimit(fragments.size());
@@ -647,7 +645,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     @SuppressLint("NotifyDataSetChanged")
     private void sortData(AppInfo appInfo) {
         appInfo.setOpenAppCount(appInfo.getOpenAppCount() + 1);
-        Collections.sort(appListAdapter.getItems(), (o1, o2) -> Integer.compare(o2.getOpenAppCount(), o1.getOpenAppCount()));
+        Collections.sort(appListAdapter.getItems(), (o1, o2) -> Long.compare(o2.getOpenAppCount(), o1.getOpenAppCount()));
         appListAdapter.notifyDataSetChanged();
         dbExecutor.execute(() -> allAppsInfoDao.updateOpenAppCountByPackageName(appInfo.getPackageName(), appInfo.getOpenAppCount()));
     }
@@ -890,9 +888,9 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             }));
             // 排序
             Collections.sort(allApps, (o1, o2) -> {
-                int index1 = o1.getOpenAppCount();
-                int index2 = o2.getOpenAppCount();
-                return Integer.compare(index2, index1);
+                long index1 = o1.getOpenAppCount();
+                long index2 = o2.getOpenAppCount();
+                return Long.compare(index2, index1);
             });
             allApps.add(allApps.size(), ToolUtils.getEmptyAppInfo("壁纸", ResourceUtils.getDrawable(R.drawable.ic_wall_art_24dp), Color.parseColor("#EF4444")));
             allApps.add(allApps.size(), ToolUtils.getEmptyAppInfo("隐私空间", ResourceUtils.getDrawable(R.drawable.ic_lock_24dp), Color.parseColor("#2B2F4A")));

@@ -15,57 +15,100 @@
 
         <!-- CPU 标题 -->
         <TextView
-            android:id="@+id/tv_cpu_title"
+            android:id="@+id/tv_ram_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="CPU 使用率"
+            android:text="系统 RAM 使用率"
             android:textColor="#FFFFFF"
             android:textSize="20sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
+        <!-- 环形进度容器 -->
+        <FrameLayout
+            android:id="@+id/ram_progress_container"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toTopOf="@id/system_ram_percent"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintEnd_toStartOf="@id/waveform_cpu"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_ram_title"
+            app:layout_constraintWidth_percent=".3">
+
+            <!-- 圆环进度 -->
+            <ProgressBar
+                android:id="@+id/pb_ram"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:indeterminate="false"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/bg_storage_progress_ring" />
+
+            <!-- 中心文字 -->
+            <TextView
+                android:id="@+id/tv_ram_percent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="65%"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+        </FrameLayout>
+
+        <!-- 已用 / 总容量 -->
+        <TextView
+            android:id="@+id/system_ram_percent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="64 GB / 128 GB"
+            android:textColor="#CCCCCC"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@id/ram_progress_container"
+            app:layout_constraintStart_toStartOf="@id/ram_progress_container"
+            app:layout_constraintTop_toBottomOf="@id/ram_progress_container" />
+
+        <TextView
+            android:id="@+id/tv_ram_use"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="64GB"
+            android:textColor="#CCCCCC"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/waveform_cpu"
+            app:layout_constraintEnd_toEndOf="@id/waveform_cpu"
+            app:layout_constraintStart_toStartOf="@id/waveform_cpu" />
 
         <!-- 波形图容器 -->
         <com.jayjd.boxtop.cards.tvdesktop.WaveformView
             android:id="@+id/waveform_cpu"
             android:layout_width="0dp"
-            android:layout_height="80dp"
-            android:layout_marginTop="16dp"
+            android:layout_height="0dp"
+            android:layout_margin="16dp"
             android:background="@android:color/transparent"
+            app:layout_constraintBottom_toBottomOf="@id/ram_progress_container"
+            app:layout_constraintDimensionRatio="2:1"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_cpu_title" />
+            app:layout_constraintStart_toEndOf="@id/ram_progress_container"
+            app:layout_constraintTop_toTopOf="@id/ram_progress_container" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/tv_ram_total"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/waveform_cpu">
-            <!-- CPU 百分比 -->
-            <TextView
-                android:id="@+id/system_cpu_percent"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center_horizontal"
-                android:text="系统: 0%"
-                android:textColor="#FF4CAF50"
-                android:textSize="18sp" />
-
-            <TextView
-                android:id="@+id/app_cpu_percent"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center_horizontal"
-                android:text="软件: 0%"
-                android:textColor="#FF2196F3"
-                android:textSize="18sp" />
-        </LinearLayout>
-
+            android:text="128 GB"
+            android:textColor="#CCCCCC"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toBottomOf="@id/system_ram_percent"
+            app:layout_constraintEnd_toEndOf="@id/waveform_cpu"
+            app:layout_constraintStart_toStartOf="@id/waveform_cpu"
+            app:layout_constraintTop_toTopOf="@id/system_ram_percent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
