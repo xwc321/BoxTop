@@ -9,24 +9,82 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/bg_blur_card"
-        android:clipToOutline="true">
+        android:background="@drawable/bg_weather_card"
+        android:clipToOutline="true"
+        android:padding="16dp">
 
+        <!-- 标题 -->
         <TextView
-            android:id="@+id/tv_device_name"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_gravity="center"
-            android:background="#FF2196F3"
-            android:gravity="center"
-            android:text="Card Connectivity"
-            android:textColor="#FFFFFF"
-            android:textSize="28sp"
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="网络 / 蓝牙"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
             android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- 网络图标 -->
+        <ImageView
+            android:id="@+id/iv_network"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:contentDescription="network icon"
+            android:src="@drawable/ic_wifi_24dp"
+            app:layout_constraintBottom_toBottomOf="@id/tv_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/tv_title" />
+
+        <!-- 蓝牙图标 -->
+        <ImageView
+            android:id="@+id/iv_bluetooth"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="bluetooth icon"
+            android:src="@drawable/ic_bluetooth_connected_24dp"
+            app:layout_constraintBottom_toBottomOf="@id/iv_network"
+            app:layout_constraintEnd_toStartOf="@id/iv_network"
+            app:layout_constraintTop_toTopOf="@id/iv_network" />
+
+        <!-- 内容区域 -->
+        <LinearLayout
+            android:id="@+id/content_container"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_title">
+
+            <!-- 网络状态 -->
+            <include
+                android:id="@+id/row_network_state"
+                layout="@layout/item_device_info_row"/>
+
+            <!-- SSID -->
+            <include
+                android:id="@+id/row_ssid"
+                layout="@layout/item_device_info_row"/>
+
+            <!-- 速率 -->
+            <include
+                android:id="@+id/row_speed"
+                layout="@layout/item_device_info_row"/>
+
+            <!-- IP 地址 -->
+            <include
+                android:id="@+id/row_ip_address"
+                layout="@layout/item_device_info_row"/>
+
+            <!-- 蓝牙状态 -->
+            <include
+                android:id="@+id/row_bluetooth_state"
+                layout="@layout/item_device_info_row"/>
+
+        </LinearLayout>
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>
