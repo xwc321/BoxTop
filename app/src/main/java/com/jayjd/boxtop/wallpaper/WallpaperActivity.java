@@ -8,11 +8,9 @@ import androidx.fragment.app.Fragment;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
 import com.jayjd.boxtop.R;
 import com.jayjd.boxtop.adapter.InfoCardPagerAdapter;
-import com.jayjd.boxtop.cards.CardPerformance;
-import com.jayjd.boxtop.cards.CardStorage;
-import com.jayjd.boxtop.cards.CardWeather;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +26,16 @@ public class WallpaperActivity extends AppCompatActivity {
         setContentView(R.layout.activity_wallpaper);
         initView();
         initData();
+        bindTabWithViewPage();
+    }
+
+    private void bindTabWithViewPage() {
+        new TabLayoutMediator(wallPaperTabLayout, wallPaperViewpager, (tab, position) -> {
+            switch (position) {
+                case 0 -> tab.setText("本地壁纸");
+                case 1 -> tab.setText("内置壁纸");
+            }
+        }).attach();
     }
 
     private void initData() {
@@ -38,9 +46,8 @@ public class WallpaperActivity extends AppCompatActivity {
 
     private List<Fragment> getFragments() {
         List<Fragment> fragments = new ArrayList<>();
-        fragments.add(new CardWeather());
-        fragments.add(new CardStorage());
-        fragments.add(new CardPerformance());
+        fragments.add(new LocalWallPaperFragment());
+        fragments.add(new BuiltInWallPaperFragment());
         return fragments;
     }
 

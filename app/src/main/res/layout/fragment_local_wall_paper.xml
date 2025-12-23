@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/md_theme_background">
+        <!-- 上下分割线：70% 上半部分预览，30% 下半部分列表 -->
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline_preview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.6" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline_vertical_preview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.5" />
+
+
+        <!-- 方法一：扫码 -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layout_qr"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_margin="18dp"
+            android:background="@drawable/bg_blur_card"
+            android:padding="16dp"
+            app:layout_constraintBottom_toBottomOf="@id/guideline_preview"
+            app:layout_constraintDimensionRatio="16:9"
+            app:layout_constraintEnd_toEndOf="@id/guideline_vertical_preview"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/tv_qr_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="方法一：扫码上传"
+                android:textColor="@android:color/white"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:id="@+id/iv_qr_code"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:scaleType="centerCrop"
+                app:layout_constraintBottom_toTopOf="@id/tv_qr_tip"
+                app:layout_constraintDimensionRatio="1:1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tv_qr_title"
+                app:layout_constraintWidth_percent=".35" />
+
+            <TextView
+                android:id="@+id/tv_qr_tip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="使用手机扫描二维码上传壁纸"
+                android:textColor="#CCCCCC"
+                android:textSize="16sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/iv_qr_code" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- 方法二：HTTP -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layout_http"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_margin="18dp"
+            android:background="@drawable/bg_blur_card"
+            android:padding="16dp"
+            app:layout_constraintBottom_toBottomOf="@id/guideline_preview"
+            app:layout_constraintDimensionRatio="16:9"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/guideline_vertical_preview"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/tv_http_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="方法二：浏览器上传"
+                android:textColor="@android:color/white"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tv_http_address"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="http://192.168.1.100:8080"
+                android:textColor="@android:color/white"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tv_http_tip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="在同一局域网下，用电脑或手机浏览器访问"
+                android:textColor="#CCCCCC"
+                android:textSize="16sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- 底部辅助方案 -->
+        <LinearLayout
+            android:id="@+id/layout_bottom"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="@id/guideline_preview"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="24dp"
+                android:text="✔ 支持 U 盘导入"
+                android:textColor="#AAAAAA"
+                android:textSize="16sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="24dp"
+                android:text="✔ 建议分辨率 1920×1080 以上"
+                android:textColor="#AAAAAA"
+                android:textSize="16sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="✔ JPG / PNG 格式"
+                android:textColor="#AAAAAA"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+        <!-- 壁纸横向列表 -->
+        <com.owen.tvrecyclerview.widget.TvRecyclerView
+            android:id="@+id/local_wall_list"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_margin="8dp"
+            android:background="@drawable/bg_blur_card"
+            android:clipToPadding="false"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/guideline_preview"
+            app:tv_horizontalSpacingWithMargins="16dp"
+            app:tv_isMemoryFocus="false"
+            app:tv_isMenu="true"
+            app:tv_verticalSpacingWithMargins="16dp"
+            tools:listitem="@layout/activity_wall_pager_item" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</FrameLayout>

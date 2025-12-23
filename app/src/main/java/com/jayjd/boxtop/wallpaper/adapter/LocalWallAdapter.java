@@ -1,4 +1,4 @@
-package com.jayjd.boxtop.adapter;
+package com.jayjd.boxtop.wallpaper.adapter;
 
 import android.content.Context;
 import android.view.ViewGroup;
@@ -11,10 +11,12 @@ import com.bumptech.glide.Glide;
 import com.chad.library.adapter4.BaseQuickAdapter;
 import com.chad.library.adapter4.viewholder.QuickViewHolder;
 import com.jayjd.boxtop.R;
-import com.jayjd.boxtop.entity.WallPagerEntity;
 
-public class WallPagerAdapter extends BaseQuickAdapter<WallPagerEntity.DataBean.ListBean, QuickViewHolder> {
+import java.io.File;
+
+public class LocalWallAdapter extends BaseQuickAdapter<File, QuickViewHolder> {
     private Context context;
+
     @NonNull
     @Override
     protected QuickViewHolder onCreateViewHolder(@NonNull Context context, @NonNull ViewGroup viewGroup, int i) {
@@ -23,12 +25,13 @@ public class WallPagerAdapter extends BaseQuickAdapter<WallPagerEntity.DataBean.
     }
 
     @Override
-    protected void onBindViewHolder(@NonNull QuickViewHolder quickViewHolder, int i, @Nullable WallPagerEntity.DataBean.ListBean listBean) {
+    protected void onBindViewHolder(@NonNull QuickViewHolder quickViewHolder, int i, @Nullable File file) {
         ImageView imageView = quickViewHolder.getView(R.id.iv_wall_pager);
-        if (listBean != null) {
+        if (file != null) {
             Glide.with(context)
-                    .load(listBean.getImg())
+                    .load(file.getAbsoluteFile())
                     .into(imageView);
         }
     }
+
 }

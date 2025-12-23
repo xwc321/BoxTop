@@ -82,7 +82,7 @@ import com.jayjd.boxtop.utils.NetworkMonitor;
 import com.jayjd.boxtop.utils.PrivacyPasswordManager;
 import com.jayjd.boxtop.utils.ToolUtils;
 import com.jayjd.boxtop.utils.cpu.CpuMonitor;
-import com.jayjd.boxtop.wallpaper.WallPagerActivity;
+import com.jayjd.boxtop.wallpaper.WallpaperActivity;
 import com.owen.tvrecyclerview.widget.TvRecyclerView;
 import com.owen.tvrecyclerview.widget.V7GridLayoutManager;
 import com.owen.tvrecyclerview.widget.V7LinearLayoutManager;
@@ -642,7 +642,7 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
     }
 
     private void showWallPager() {
-        startActivity(new Intent(this, WallPagerActivity.class));
+        startActivity(new Intent(this, WallpaperActivity.class));
     }
 
     private void showError(TextView tvError, String msg) {
