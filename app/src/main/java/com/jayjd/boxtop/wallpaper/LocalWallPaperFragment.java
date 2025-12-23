@@ -37,6 +37,7 @@ public class LocalWallPaperFragment extends BaseCardFragment {
 
     ImageView ivQrCode, localWallPagerDefault;
     TextView tvHttpAddress;
+    private boolean hasLoaded = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -127,17 +128,15 @@ public class LocalWallPaperFragment extends BaseCardFragment {
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        String address = ControlManager.get().getAddress(false);
-        Bitmap bitmap = QRCodeGen.generateBitmap(address, 300, 300, 0, Color.WHITE, Color.TRANSPARENT);
-        Glide.with(appContext).load(bitmap).into(ivQrCode);
-        tvHttpAddress.setText(address);
-    }
-
-    @Override
     protected void onFragmentVisible() {
         super.onFragmentVisible();
+        if (!hasLoaded) {
+            String address = ControlManager.get().getAddress(false);
+            Bitmap bitmap = QRCodeGen.generateBitmap(address, 300, 300, 0, Color.WHITE, Color.TRANSPARENT);
+            Glide.with(appContext).load(bitmap).into(ivQrCode);
+            tvHttpAddress.setText(address);
+            hasLoaded = true;
+        }
         initData();
     }
 

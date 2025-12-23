@@ -45,6 +45,7 @@ public class BuiltInWallPaperFragment extends BaseCardFragment {
     TextView downloadProgress;
     private WallPagerAdapter wallPagerAdapter;
     private TvRecyclerView trWallList;
+    private boolean hasLoaded = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -87,7 +88,6 @@ public class BuiltInWallPaperFragment extends BaseCardFragment {
                 Toast.makeText(appContext, "加载壁纸列表失败", Toast.LENGTH_SHORT).show();
             }
         });
-        ToolUtils.initWallPager(appContext, wallPagerDefault);
     }
 
     private void initView(View inflate) {
@@ -185,7 +185,11 @@ public class BuiltInWallPaperFragment extends BaseCardFragment {
     @Override
     protected void onFragmentVisible() {
         super.onFragmentVisible();
-        initData();
+        if (!hasLoaded) {
+            initData();
+            hasLoaded = true;
+        }
+        ToolUtils.initWallPager(appContext, wallPagerDefault);
     }
 
     @Override
