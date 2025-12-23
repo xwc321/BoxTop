@@ -19,10 +19,13 @@ import android.os.Bundle;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.provider.Settings;
+import android.text.method.DigitsKeyListener;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -76,6 +79,7 @@ import com.jayjd.boxtop.utils.AppsUtils;
 import com.jayjd.boxtop.utils.BlurCompat;
 import com.jayjd.boxtop.utils.DotContainerUtils;
 import com.jayjd.boxtop.utils.NetworkMonitor;
+import com.jayjd.boxtop.utils.PrivacyPasswordManager;
 import com.jayjd.boxtop.utils.SPUtils;
 import com.jayjd.boxtop.utils.ToolUtils;
 import com.jayjd.boxtop.utils.cpu.CpuMonitor;
@@ -589,12 +593,10 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
             Log.d("MainActivity", "onItemClick position = " + position);
             AppInfo appInfo = parent.getItem(position);
             if (appInfo.getPackageName().isEmpty()) {
-                if (appInfo.getName().equals("系统应用")) {
-                    showSystemApps();
-                } else if (appInfo.getName().equals("壁纸")) {
-                    showWallPager();
-                } else if (appInfo.getName().equals("隐私空间")) {
-                    showPrivacySpace();
+                switch (appInfo.getName()) {
+                    case "系统应用" -> showSystemApps();
+                    case "壁纸" -> showWallPager();
+                    case "隐私空间" -> showPrivacySpace();
                 }
             } else {
                 AppUtils.launchApp(appInfo.getPackageName());
@@ -658,8 +660,58 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         startActivity(new Intent(this, WallPagerActivity.class));
     }
 
+    private void showError(TextView tvError, String msg) {
+        tvError.setText(msg);
+        tvError.setVisibility(View.VISIBLE);
+    }
+
     private void showPrivacySpace() {
+        PrivacyPasswordManager privacyPasswordManager = new PrivacyPasswordManager(this);
+        if (!privacyPasswordManager.hasPassword()) {
+            // 引导用户设置密码
+            configPrivacyPwd(privacyPasswordManager);
+        } else {
+            View inflate = LayoutInflater.from(this).inflate(R.layout.privacy_verify_password, null);
+            Dialog dialog = showMaterialAlertDialog(this, "隐私空间 - 输入密码", inflate);
+            dialog.setCancelable(false);
+            TextView etPassword = inflate.findViewById(R.id.et_password);
+            Button btnConfirm = inflate.findViewById(R.id.btn_confirm);
+            TextView tvError = inflate.findViewById(R.id.tv_error);
+
+            etPassword.setOnKeyListener((v, keyCode, event) -> {
+                if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && event.getAction() == KeyEvent.ACTION_DOWN) {
+                    btnConfirm.requestFocus();
+                    return true;
+                }
+                return false;
+            });
+
+            etPassword.requestFocus();
+            btnConfirm.setOnClickListener(v -> {
+                String pwd = etPassword.getText().toString();
+                if (pwd.isEmpty()) {
+                    Toast.makeText(this, "请输入密码", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                boolean b = privacyPasswordManager.verifyPassword(pwd);
+                if (!b) {
+                    tvError.setVisibility(View.VISIBLE);
+                } else {
+                    tvError.setVisibility(View.GONE);
+                    dialog.dismiss();
+                    showPrivacyContent();
+                }
+            });
+        }
+    }
+
+    private void showPrivacyContent() {
+        if (hiddenApps.isEmpty()) {
+            Toast.makeText(this, "暂无隐私空间", Toast.LENGTH_SHORT).show();
+            return;
+        }
         View inflate = LayoutInflater.from(this).inflate(R.layout.activity_dialog_all_app, null);
+        showMaterialAlertDialog(this, "隐私空间", inflate);
         TvRecyclerView allDialogGrid = inflate.findViewById(R.id.all_dialog_grid);
         allDialogGrid.setLayoutManager(new V7GridLayoutManager(this, 5));
         AppIconAdapter dialogAppIconAdapter = new AppIconAdapter();
@@ -680,7 +732,74 @@ public class MainActivity extends AppCompatActivity implements ViewAnimateListen
         allDialogGrid.setOnItemListener(new TvOnItemListener());
         allDialogGrid.requestFocus();
         allAppsContainer.setVisibility(View.INVISIBLE);
-        showMaterialAlertDialog(this, "隐私空间", inflate);
+    }
+
+    private void configPrivacyPwd(PrivacyPasswordManager privacyPasswordManager) {
+        View inflate = LayoutInflater.from(this).inflate(R.layout.privacy_set_password, null);
+        Dialog dialog = showMaterialAlertDialog(this, "隐私空间 - 设置密码", inflate);
+        dialog.setCancelable(false);
+        EditText etPassword = inflate.findViewById(R.id.et_password);
+        EditText etConfirm = inflate.findViewById(R.id.et_confirm_password);
+        TextView tvError = inflate.findViewById(R.id.tv_error);
+        Button btnConfirm = inflate.findViewById(R.id.btn_confirm);
+        etPassword.setKeyListener(DigitsKeyListener.getInstance("0123456789"));
+        etConfirm.setKeyListener(DigitsKeyListener.getInstance("0123456789"));
+
+        etPassword.setOnKeyListener((v, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && event.getAction() == KeyEvent.ACTION_DOWN) {
+                etConfirm.requestFocus();
+                return true;
+            }
+            return false;
+        });
+
+        etConfirm.setOnKeyListener((v, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_DPAD_UP && event.getAction() == KeyEvent.ACTION_DOWN) {
+                etPassword.requestFocus();
+                return true;
+            } else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN && event.getAction() == KeyEvent.ACTION_DOWN) {
+                btnConfirm.requestFocus();
+                return true;
+            }
+            return false;
+        });
+
+
+        /* ===== 默认焦点（TV 必须） ===== */
+        etPassword.requestFocus();
+
+        /* ===== 确认逻辑 ===== */
+        btnConfirm.setOnClickListener(v -> {
+            String p1 = etPassword.getText().toString().trim();
+            String p2 = etConfirm.getText().toString().trim();
+
+            if (p1.length() < 4) {
+                showError(tvError, "密码至少 4 位");
+                etPassword.requestFocus();
+                return;
+            }
+
+            if (!p1.equals(p2)) {
+                showError(tvError, "两次密码不一致");
+                etConfirm.requestFocus();
+                return;
+            }
+
+            tvError.setVisibility(View.GONE);
+
+            // 保存密码
+            privacyPasswordManager.setPassword(p1);
+            dialog.dismiss();
+        });
+
+        /* ===== 遥控器 Enter 键支持 ===== */
+        etConfirm.setOnEditorActionListener((v, actionId, event) -> {
+            btnConfirm.performClick();
+            return true;
+        });
+
+
+        return;
     }
 
     private void showSystemApps() {

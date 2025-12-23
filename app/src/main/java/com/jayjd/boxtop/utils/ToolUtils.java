@@ -46,6 +46,18 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
 
 public class ToolUtils {
+
+    // 设置隐私空间的密码
+    public static void setPrivacyPwd(Context context, String pwd) {
+        SPUtils.put(context, "privacy_pwd", pwd);
+    }
+
+    public static String getPrivacyPwd(Context context) {
+        return (String) SPUtils.get(context, "privacy_pwd", "");
+    }
+
+
+
     public static void startAnimation(View view) {
         if (App.isPaid(view.getContext())) {
             view.animate().scaleX(1.1f).scaleY(1.1f).setDuration(500) // 适当延长动画时间

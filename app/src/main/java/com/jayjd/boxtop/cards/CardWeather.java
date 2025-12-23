@@ -116,7 +116,7 @@ public class CardWeather extends BaseCardFragment {
     private void initViewData(WeatherEntity weatherEntity) {
         SPUtils.put(appContext, "weather_data", new Gson().toJson(weatherEntity));
         tvCity.setText(weatherEntity.getCityName());
-        aboutInfo.setText("* 最近刷新时间：" + weatherEntity.getLocaltime());
+        aboutInfo.setText("* 刷新时间：" + weatherEntity.getLocaltime());
         tvTemperature.setText(Math.round(weatherEntity.getTemp_c()) + "°");
         Glide.with(appContext).load(weatherEntity.getIcon()).into(ivWeatherIcon);
         tvWeatherDesc.setText(weatherEntity.getText() + " · 体感温度：" + Math.round(weatherEntity.getFeelsLike_c()) + "°");
