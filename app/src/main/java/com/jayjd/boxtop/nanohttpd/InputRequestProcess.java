@@ -27,7 +27,7 @@ public class InputRequestProcess implements RequestProcess {
     @Override
     public boolean isRequest(NanoHTTPD.IHTTPSession session, String fileName) {
         if (session.getMethod() == NanoHTTPD.Method.POST) {
-            return fileName.equals("/action");
+            return fileName.equals("/api/push/wallpaper") || fileName.equals("/api/push/app");
         }
         return false;
     }
@@ -39,26 +39,23 @@ public class InputRequestProcess implements RequestProcess {
         String source = params.get("source");  // local / url
         String url = params.get("url");  // local / url
         Log.d(TAG, "doResponse: " + uri + " - " + type + " - " + source);
-        if (type.equals("apk")){
-            mDataReceiver.onDownloadApk(url);
+        try {
+            if ("apk".equals(type)) {
+                if ("local".equals(source)) {
+                    mDataReceiver.onLocalInstallApk(params.get("localPath"));
+                } else {
+                    mDataReceiver.onDownloadApk(url);
+                }
+            } else {
+                if ("local".equals(source)) {
+                    mDataReceiver.onLocalWallpaper(params.get("localPath"));
+                } else {
+                    mDataReceiver.onDownloadWallpaper(url);
+                }
+            }
+            return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.OK, "推送成功");
+        } catch (Exception e) {
+            return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.INTERNAL_ERROR, e.getMessage());
         }
-
-
-//        if (fileName.equals("/action")) {
-//            if (params.get("do") != null && mDataReceiver != null) {
-//                String action = params.get("do");
-//                switch (Objects.requireNonNull(action)) {
-//                    case "HDKPush" -> mDataReceiver.onHDKPush(Objects.requireNonNull(params.get("word")).trim());
-//                    case "DouYuPush" -> mDataReceiver.onDouYuPush(Objects.requireNonNull(params.get("word")).trim());
-//                    case "TvLivePush" -> mDataReceiver.onTvLivePush(Objects.requireNonNull(params.get("word")).trim());
-//                    case "FanLivePush" -> mDataReceiver.onFanLivePush(Objects.requireNonNull(params.get("word")).trim());
-//                    case "CookiePush" -> mDataReceiver.onCookiePush(Objects.requireNonNull(params.get("word")).trim());
-//                }
-//                return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.OK, "推送成功");
-//            }else{
-//                return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.NOT_FOUND, "Error 404, file not found.");
-//            }
-//        }
-        return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.NOT_FOUND, "Error 404, file not found.");
     }
 }

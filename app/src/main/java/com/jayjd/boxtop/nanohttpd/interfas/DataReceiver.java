@@ -1,13 +1,11 @@
 package com.jayjd.boxtop.nanohttpd.interfas;
 
-import android.content.Context;
-
 public interface DataReceiver {
     void onDownloadApk(String url);
 
-    void onDownloadWallpaper(Context context, String url);
+    void onDownloadWallpaper(String url);
 
-    void onInstallApk(Context context, String absoluteFile, String tmpFileItem);
+    void onLocalInstallApk(String absoluteFile);
 
-    void onSetWallpaper(Context context, String absolutePath);
+    void onLocalWallpaper(String absolutePath);
 }

@@ -265,23 +265,7 @@ public class RemoteServer extends NanoHTTPD {
                     return createPlainTextResponse(Response.Status.BAD_REQUEST, "missing type or source");
                 }
 
-                if ("url".equals(source)) {
-                    // 网络推送逻辑（JSON）
-                    String json = files.get("postData");
-                    if (json == null) {
-                        return createPlainTextResponse(Response.Status.BAD_REQUEST, "missing json body");
-                    }
-                    JsonObject obj = JsonParser.parseString(json).getAsJsonObject();
-                    String url = obj.get("url").getAsString();
-
-                    Log.d("TAG", "URL push: " + type + " -> " + url);
-                    for (RequestProcess requestProcess : postRequestList) {
-                        if (requestProcess.isRequest(session, uri)) {
-                            return requestProcess.doResponse(session, uri, params, null);
-                        }
-                    }
-                    return createPlainTextResponse(Response.Status.OK, "处理失败");
-                } else {
+                if ("local".equals(source)) {
                     // 本地文件逻辑（multipart）
                     String saveDir;
                     if ("apk".equals(type)) {
@@ -304,24 +288,23 @@ public class RemoteServer extends NanoHTTPD {
                         if (dest.exists()) dest.delete();
                         FileUtils.copyFile(tmp, dest);
                         tmp.delete();
-
                         Log.d("TAG", "save file -> " + dest.getAbsolutePath());
-
-
-
-                        if ("apk".equals(type)) {
-                            mDataReceiver.onInstallApk(context, saveDir, fileNameReal);
-                        } else {
-                            mDataReceiver.onSetWallpaper(context, dest.getAbsolutePath());
+                        params.put("localPath", dest.getAbsolutePath());
+                        for (RequestProcess requestProcess : postRequestList) {
+                            if (requestProcess.isRequest(session, uri)) {
+                                return requestProcess.doResponse(session, uri, params, null);
+                            }
                         }
                     }
+                } else {
+                    Log.d("TAG", "serve: "+postRequestList.size());
                     for (RequestProcess requestProcess : postRequestList) {
                         if (requestProcess.isRequest(session, uri)) {
                             return requestProcess.doResponse(session, uri, params, null);
                         }
                     }
-                    return createPlainTextResponse(Response.Status.OK, "处理失败");
                 }
+                return createPlainTextResponse(Response.Status.OK, "处理失败");
             } catch (IOException e) {
                 return createPlainTextResponse(Response.Status.INTERNAL_ERROR, "异常：" + e.getMessage());
             }
