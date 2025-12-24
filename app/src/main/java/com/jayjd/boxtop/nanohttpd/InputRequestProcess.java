@@ -1,11 +1,12 @@
 package com.jayjd.boxtop.nanohttpd;
 
 
+import android.util.Log;
+
 import com.jayjd.boxtop.nanohttpd.interfas.DataReceiver;
 import com.jayjd.boxtop.nanohttpd.interfas.RequestProcess;
 
 import java.util.Map;
-import java.util.Objects;
 
 import fi.iki.elonen.NanoHTTPD;
 
@@ -32,23 +33,32 @@ public class InputRequestProcess implements RequestProcess {
     }
 
     @Override
-    public NanoHTTPD.Response doResponse(NanoHTTPD.IHTTPSession session, String fileName, Map<String, String> params, Map<String, String> files) {
+    public NanoHTTPD.Response doResponse(NanoHTTPD.IHTTPSession session, String uri, Map<String, String> params, Map<String, String> files) {
         DataReceiver mDataReceiver = remoteServer.getDataReceiver();
-        if (fileName.equals("/action")) {
-            if (params.get("do") != null && mDataReceiver != null) {
-                String action = params.get("do");
-                switch (Objects.requireNonNull(action)) {
-                    case "HDKPush" -> mDataReceiver.onHDKPush(Objects.requireNonNull(params.get("word")).trim());
-                    case "DouYuPush" -> mDataReceiver.onDouYuPush(Objects.requireNonNull(params.get("word")).trim());
-                    case "TvLivePush" -> mDataReceiver.onTvLivePush(Objects.requireNonNull(params.get("word")).trim());
-                    case "FanLivePush" -> mDataReceiver.onFanLivePush(Objects.requireNonNull(params.get("word")).trim());
-                    case "CookiePush" -> mDataReceiver.onCookiePush(Objects.requireNonNull(params.get("word")).trim());
-                }
-                return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.OK, "推送成功");
-            }else{
-                return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.NOT_FOUND, "Error 404, file not found.");
-            }
+        String type = params.get("type");      // apk / wallpaper
+        String source = params.get("source");  // local / url
+        String url = params.get("url");  // local / url
+        Log.d(TAG, "doResponse: " + uri + " - " + type + " - " + source);
+        if (type.equals("apk")){
+            mDataReceiver.onDownloadApk(url);
         }
+
+
+//        if (fileName.equals("/action")) {
+//            if (params.get("do") != null && mDataReceiver != null) {
+//                String action = params.get("do");
+//                switch (Objects.requireNonNull(action)) {
+//                    case "HDKPush" -> mDataReceiver.onHDKPush(Objects.requireNonNull(params.get("word")).trim());
+//                    case "DouYuPush" -> mDataReceiver.onDouYuPush(Objects.requireNonNull(params.get("word")).trim());
+//                    case "TvLivePush" -> mDataReceiver.onTvLivePush(Objects.requireNonNull(params.get("word")).trim());
+//                    case "FanLivePush" -> mDataReceiver.onFanLivePush(Objects.requireNonNull(params.get("word")).trim());
+//                    case "CookiePush" -> mDataReceiver.onCookiePush(Objects.requireNonNull(params.get("word")).trim());
+//                }
+//                return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.OK, "推送成功");
+//            }else{
+//                return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.NOT_FOUND, "Error 404, file not found.");
+//            }
+//        }
         return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.NOT_FOUND, "Error 404, file not found.");
     }
 }

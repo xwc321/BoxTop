@@ -140,7 +140,7 @@ public class BuiltInWallPaperFragment extends BaseCardFragment {
     }
 
     private void downloadWallPager(String img) {
-        File wallDirFile = WallPaperUtils.getLocalPath(appContext);
+        File wallDirFile = WallPaperUtils.getLocalWallPath(appContext);
         if (!wallDirFile.exists()) {
             boolean mkdirs = wallDirFile.mkdirs();
         }

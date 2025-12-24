@@ -52,27 +52,17 @@ public class LocalWallPaperFragment extends BaseCardFragment {
     private void initRemoteServer() {
         ControlManager.get().startServer(new DataReceiver() {
             @Override
-            public void onDouYuPush(String word) {
+            public void onSetWallpaper(Context context, String absolutePath) {
 
             }
 
             @Override
-            public void onHDKPush(String word) {
+            public void onDownloadApk(Context context, String url) {
 
             }
 
             @Override
-            public void onTvLivePush(String word) {
-
-            }
-
-            @Override
-            public void onFanLivePush(String word) {
-
-            }
-
-            @Override
-            public void onCookiePush(String word) {
+            public void onDownloadWallpaper(Context context, String url) {
 
             }
 

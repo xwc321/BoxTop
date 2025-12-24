@@ -7,25 +7,17 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
-import com.jayjd.boxtop.utils.SPUtils;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 public class WallPaperUtils {
-    public static String getDownloadStringPath(Context context) {
-        return getLocalPath(context).getAbsolutePath();
-    }
 
     public static List<File> getLocalWallPaperList(Context context) {
         List<File> fileList = new ArrayList<>();
 
-        File localPath = getLocalPath(context);
+        File localPath = getLocalWallPath(context);
         Log.d("TAG", "getLocalWallPaperList: " + localPath.getAbsolutePath());
-        if (localPath.exists()) {
-            boolean mkdirs = localPath.mkdirs();
-        }
         File[] files = localPath.listFiles();
         if (files == null) return fileList;
         for (File file : files) {
@@ -37,7 +29,7 @@ public class WallPaperUtils {
     }
 
     @NonNull
-    public static File getLocalPath(Context context) {
+    public static File getLocalWallPath(Context context) {
         File absoluteFile;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             absoluteFile = context.getExternalFilesDir(Environment.DIRECTORY_DCIM);
@@ -47,10 +39,28 @@ public class WallPaperUtils {
         } else {
             absoluteFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
         }
+        if (!absoluteFile.exists()) {
+            boolean mkdirs = absoluteFile.mkdirs();
+        }
         return absoluteFile;
     }
 
-    public static String getDefaultWallpaper(Context appContext) {
-        return (String) SPUtils.get(appContext, "default_", "");
+    @NonNull
+    public static File getLocalDownloadPath(Context context) {
+        File absoluteFile;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            absoluteFile = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+            if (absoluteFile == null) {
+                absoluteFile = new File(context.getFilesDir() + File.separator + Environment.DIRECTORY_DOWNLOADS);
+            }
+        } else {
+            absoluteFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        }
+        if (!absoluteFile.exists()) {
+            boolean mkdirs = absoluteFile.mkdirs();
+        }
+        return absoluteFile;
     }
+
+
 }

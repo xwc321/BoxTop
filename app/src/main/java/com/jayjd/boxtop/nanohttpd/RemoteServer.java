@@ -7,6 +7,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.jayjd.boxtop.R;
 import com.jayjd.boxtop.nanohttpd.interfas.DataReceiver;
 import com.jayjd.boxtop.nanohttpd.interfas.RequestProcess;
@@ -37,6 +39,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
 
 import fi.iki.elonen.NanoHTTPD;
+import lombok.Getter;
 
 public class RemoteServer extends NanoHTTPD {
 
@@ -47,6 +50,7 @@ public class RemoteServer extends NanoHTTPD {
     private final ArrayList<RequestProcess> getRequestList = new ArrayList<>();
     private final ArrayList<RequestProcess> postRequestList = new ArrayList<>();
     private final Context context;
+    @Getter
     private boolean isStarted = false;
     private DataReceiver mDataReceiver;
 
@@ -145,10 +149,7 @@ public class RemoteServer extends NanoHTTPD {
         getRequestList.add(new RawRequestProcess(this.context, "/index.html", R.raw.index, "", NanoHTTPD.MIME_HTML));
         getRequestList.add(new RawRequestProcess(this.context, "/style.css", R.raw.style, "", "text/css"));
         getRequestList.add(new RawRequestProcess(this.context, "/weui.css", R.raw.weui, "", "text/css"));
-        getRequestList.add(new RawRequestProcess(this.context, "/naicha.png", R.raw.naicha, "", "png"));
         getRequestList.add(new RawRequestProcess(this.context, "/wechat_reward_qrcode.jpg", R.raw.wechat_reward_qrcode, "", "jpg"));
-        getRequestList.add(new RawRequestProcess(this.context, "/hy.png", R.raw.hy, "", "png"));
-        getRequestList.add(new RawRequestProcess(this.context, "/dy.png", R.raw.dy, "", "png"));
         getRequestList.add(new RawRequestProcess(this.context, "/jquery.js", R.raw.jquery, "", "application/x-javascript"));
         getRequestList.add(new RawRequestProcess(this.context, "/script.js", R.raw.script, "", "application/x-javascript"));
         getRequestList.add(new RawRequestProcess(this.context, "/favicon.ico", R.mipmap.ic_launcher, "", "image/x-icon"));
@@ -185,21 +186,18 @@ public class RemoteServer extends NanoHTTPD {
         isStarted = false;
     }
 
-    public boolean isStarted() {
-        return isStarted;
-    }
-
     @Override
     public Response serve(IHTTPSession session) {
-        String fileName = session.getUri().trim();
+        String uri = session.getUri().trim();
+        Log.d("NanoHTTPD", "uri = " + uri);
 
-        Log.d("TAG", fileName);
-        if (fileName.equals("/status")) {
-            return createPlainTextResponse(NanoHTTPD.Response.Status.OK, "OK");
+        if ("/status".equals(uri)) {
+            return createPlainTextResponse(Response.Status.OK, "OK");
         }
+
         if (session.getMethod() == Method.GET) {
             for (RequestProcess process : getRequestList) {
-                if (process.isRequest(session, fileName)) {
+                if (process.isRequest(session, uri)) {
                     Map<String, String> params = new HashMap<>();
                     Map<String, List<String>> parameters = session.getParameters();
                     for (String key : parameters.keySet()) {
@@ -208,95 +206,132 @@ public class RemoteServer extends NanoHTTPD {
                             params.put(key, list.get(0));
                         }
                     }
-                    return process.doResponse(session, fileName, params, null);
+                    return process.doResponse(session, uri, params, null);
                 }
             }
         } else if (session.getMethod() == Method.POST) {
-
-            Map<String, String> files = new HashMap<>();
             try {
-                if (session.getHeaders().containsKey("content-type")) {
-                    String hd = session.getHeaders().get("content-type");
-                    if (hd != null) {
-                        // cuke: 修正中文乱码问题
-                        if (hd.toLowerCase().contains("multipart/form-data") && !hd.toLowerCase().contains("charset=")) {
+                // ✅ 这里直接粘贴我给你的“统一解析 + 本地/网络分发”代码
+                Map<String, String> files = new HashMap<>();
+                Map<String, String> params = new HashMap<>();
+
+                try {
+                    // 修正 multipart 中文乱码
+                    if (session.getHeaders().containsKey("content-type")) {
+                        String hd = session.getHeaders().get("content-type");
+                        if (hd != null && hd.toLowerCase().contains("multipart/form-data") && !hd.toLowerCase().contains("charset=")) {
                             Matcher matcher = Pattern.compile("[ |\t]*(boundary[ |\t]*=[ |\t]*['|\"]?[^\"^'^;^,]*['|\"]?)", Pattern.CASE_INSENSITIVE).matcher(hd);
                             String boundary = matcher.find() ? matcher.group(1) : null;
                             if (boundary != null) {
                                 session.getHeaders().put("content-type", "multipart/form-data; charset=utf-8; " + boundary);
                             }
-                        }
-                    }
-                }
-                session.parseBody(files);
-            } catch (IOException IOExc) {
-                return createPlainTextResponse(NanoHTTPD.Response.Status.INTERNAL_ERROR, "SERVER INTERNAL ERROR: IOException: " + IOExc.getMessage());
-            } catch (NanoHTTPD.ResponseException rex) {
-                return createPlainTextResponse(rex.getStatus(), rex.getMessage());
-            }
-            for (RequestProcess process : postRequestList) {
-                if (process.isRequest(session, fileName)) {
-                    Map<String, String> params = new HashMap<>();
-                    Map<String, List<String>> parameters = session.getParameters();
-                    for (String key : parameters.keySet()) {
-                        List<String> list = parameters.get(key);
-                        if (list != null && !list.isEmpty()) {
-                            params.put(key, list.get(0));
-                        }
-                    }
-                    return process.doResponse(session, fileName, params, files);
-                }
-            }
+                            session.parseBody(files);
 
-            try {
-                Map<String, List<String>> params = session.getParameters();
-                Log.d("TAG", fileName);
-                if (fileName.equals("/upload")) {
-                    for (String k : params.keySet()) {
-                        if (k.startsWith("files-")) {
-                            List<String> list = params.get(k);
-                            String tmpFile = files.get(k);
-                            if (list == null || list.isEmpty()) {
-                                return createPlainTextResponse(NanoHTTPD.Response.Status.OK, "OK");
-                            }
-                            for (String tmpFileItem : list) {
-                                File tmp = new File(tmpFile);
-                                Log.d("TAG", tmp.getAbsolutePath());
-                                String absoluteFile;
-                                if (tmpFileItem.toLowerCase().contains(".apk")) {
-                                    tmpFileItem = tmpFileItem.split(".apk")[0] + ".apk";
-                                    absoluteFile = WallPaperUtils.getDownloadStringPath(context);
-                                } else {
-                                    absoluteFile = getFileDir(context);
-                                }
-
-                                File file = new File(absoluteFile + "/" + tmpFileItem);
-                                Log.d("TAG", file.getAbsolutePath());
-                                if (file.exists()) file.delete();
-                                if (tmp.exists()) {
-                                    if (tmpFileItem.toLowerCase().endsWith(".apk")) {
-                                        FileUtils.copyFile(tmp, file);
-                                        Log.d("TAG", "apk - " + file.getAbsolutePath());
-                                        mDataReceiver.onInstallApk(context, absoluteFile, tmpFileItem);
-//                                        ToolsUtils.installApk(context, file.getAbsolutePath());
-                                    } else {
-                                        byte[] bytes = FileUtils.readSimple(tmp);
-                                        FileUtils.writeSimple(bytes, file);
-                                    }
-                                }
-                                if (tmp.exists()) {
-                                    tmp.delete();
+                            for (Map.Entry<String, List<String>> entry : session.getParameters().entrySet()) {
+                                if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                                    params.put(entry.getKey(), entry.getValue().get(0));
                                 }
                             }
+                        } else if (hd != null && hd.toLowerCase().contains("application/json")) {
+                            // ✅ JSON 不需要修正，直接 parseBody 即可
+                            session.parseBody(files);
+                            String jsonStr = files.get("postData");
+                            if (jsonStr == null || jsonStr.isEmpty()) {
+                                return createPlainTextResponse(Response.Status.BAD_REQUEST, "数据异常");
+                            }
+                            // 2️⃣ 转成 JsonObject
+                            JsonObject obj = JsonParser.parseString(jsonStr).getAsJsonObject();
+                            String type = obj.has("type") ? obj.get("type").getAsString() : null;       // apk / wallpaper
+                            String source = obj.has("source") ? obj.get("source").getAsString() : null; // url
+                            String url = obj.has("url") ? obj.get("url").getAsString() : null;
+                            if (type == null || source == null || url == null) {
+                                return createPlainTextResponse(Response.Status.BAD_REQUEST, "缺少 type / source / url");
+                            }
+                            params.put("type", type);
+                            params.put("source", source);
+                            params.put("url", url);
                         }
                     }
-                    return createPlainTextResponse(NanoHTTPD.Response.Status.OK, "推送成功");
+
+                } catch (Exception e) {
+                    return createPlainTextResponse(Response.Status.INTERNAL_ERROR, "POST parse error: " + e.getMessage());
                 }
-            } catch (Throwable th) {
-                return createPlainTextResponse(NanoHTTPD.Response.Status.OK, "异常：" + th.getMessage());
+
+                // ===== 处理本地 / 网络分发 =====
+                String type = params.get("type");    // apk / wallpaper
+                String source = params.get("source");  // local / url
+
+                if (type == null || source == null) {
+                    return createPlainTextResponse(Response.Status.BAD_REQUEST, "missing type or source");
+                }
+
+                if ("url".equals(source)) {
+                    // 网络推送逻辑（JSON）
+                    String json = files.get("postData");
+                    if (json == null) {
+                        return createPlainTextResponse(Response.Status.BAD_REQUEST, "missing json body");
+                    }
+                    JsonObject obj = JsonParser.parseString(json).getAsJsonObject();
+                    String url = obj.get("url").getAsString();
+
+                    Log.d("TAG", "URL push: " + type + " -> " + url);
+                    for (RequestProcess requestProcess : postRequestList) {
+                        if (requestProcess.isRequest(session, uri)) {
+                            return requestProcess.doResponse(session, uri, params, null);
+                        }
+                    }
+                    return createPlainTextResponse(Response.Status.OK, "处理失败");
+                } else {
+                    // 本地文件逻辑（multipart）
+                    String saveDir;
+                    if ("apk".equals(type)) {
+                        saveDir = WallPaperUtils.getLocalDownloadPath(context).getAbsolutePath();
+                    } else {
+                        saveDir = WallPaperUtils.getLocalWallPath(context).getAbsolutePath(); // 壁纸目录
+                    }
+
+                    for (Map.Entry<String, String> entry : files.entrySet()) {
+                        String formKey = entry.getKey();      // files
+                        String tempPath = entry.getValue();   // 临时文件
+                        File tmp = new File(tempPath);
+                        if (!tmp.exists()) continue;
+
+                        List<String> names = session.getParameters().get(formKey);
+                        if (names == null || names.isEmpty()) continue;
+                        String fileNameReal = names.get(0);
+
+                        File dest = new File(saveDir, fileNameReal);
+                        if (dest.exists()) dest.delete();
+                        FileUtils.copyFile(tmp, dest);
+                        tmp.delete();
+
+                        Log.d("TAG", "save file -> " + dest.getAbsolutePath());
+
+
+
+                        if ("apk".equals(type)) {
+                            mDataReceiver.onInstallApk(context, saveDir, fileNameReal);
+                        } else {
+                            mDataReceiver.onSetWallpaper(context, dest.getAbsolutePath());
+                        }
+                    }
+                    for (RequestProcess requestProcess : postRequestList) {
+                        if (requestProcess.isRequest(session, uri)) {
+                            return requestProcess.doResponse(session, uri, params, null);
+                        }
+                    }
+                    return createPlainTextResponse(Response.Status.OK, "处理失败");
+                }
+            } catch (IOException e) {
+                return createPlainTextResponse(Response.Status.INTERNAL_ERROR, "异常：" + e.getMessage());
             }
         }
-        return getRequestList.get(0).doResponse(session, "", null, null);
+        return createPlainTextResponse(Response.Status.NOT_FOUND, "Not Found");
+    }
+
+    private boolean isJsonRequest(IHTTPSession session) {
+        String contentType = session.getHeaders().get("content-type");
+        return contentType != null && contentType.contains("application/json");
     }
 
     public String getFileDir(@NonNull Context context) {

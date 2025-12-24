@@ -3,16 +3,11 @@ package com.jayjd.boxtop.nanohttpd.interfas;
 import android.content.Context;
 
 public interface DataReceiver {
-    void onDouYuPush(String word);
+    void onDownloadApk(String url);
 
-    void onHDKPush(String word);
-
-    void onTvLivePush(String word);
-
-    void onFanLivePush(String word);
-
-    void onCookiePush(String word);
+    void onDownloadWallpaper(Context context, String url);
 
     void onInstallApk(Context context, String absoluteFile, String tmpFileItem);
 
+    void onSetWallpaper(Context context, String absolutePath);
 }
