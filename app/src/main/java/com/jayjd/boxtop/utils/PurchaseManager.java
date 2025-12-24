@@ -4,6 +4,9 @@ import android.content.Context;
 
 import com.jayjd.boxtop.enums.LicenseLevel;
 
+import lombok.Getter;
+
+@Getter
 public class PurchaseManager {
 
     private static volatile PurchaseManager instance;
@@ -36,7 +39,23 @@ public class PurchaseManager {
         LicenseEvent.notifyChanged(context);
     }
 
-    public LicenseLevel getLicenseLevel() {
-        return licenseLevel;
+    /**
+     * 验证激活码
+     */
+    public boolean verifyActivationCode(String code) {
+        // 简单示例，可改成动态生成或加密
+        return "BOXTOP-PRO-2025".equalsIgnoreCase(code.trim());
     }
+
+    /**
+     * 使用激活码尝试解锁
+     */
+    public boolean unlockWithCode(Context context, String code) {
+        if (verifyActivationCode(code)) {
+            unlockPro(context);
+            return true;
+        }
+        return false;
+    }
+
 }

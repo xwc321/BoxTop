@@ -22,4 +22,28 @@
         <item name="android:windowMinWidthMajor">60%</item>
         <item name="android:windowMinWidthMinor">60%</item>
     </style>
+
+
+    <!-- Pro Dialog Theme -->
+    <style name="ProDialogTheme" parent="Theme.AppCompat.Dialog">
+        <!-- 弹窗背景透明 -->
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <!-- 弹窗圆角背景由布局自定义 -->
+        <item name="android:backgroundDimEnabled">true</item>
+        <!-- 背景遮罩半透明 -->
+        <item name="android:backgroundDimAmount">0.6</item>
+        <!-- 去掉标题栏 -->
+        <item name="android:windowNoTitle">true</item>
+        <!-- 弹出动画 -->
+        <item name="android:windowAnimationStyle">@style/ProDialogAnimation</item>
+        <!-- 支持聚焦 -->
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">true</item>
+    </style>
+
+    <!-- 弹窗动画 -->
+    <style name="ProDialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/pro_dialog_enter</item>
+        <item name="android:windowExitAnimation">@anim/pro_dialog_exit</item>
+    </style>
 </resources>

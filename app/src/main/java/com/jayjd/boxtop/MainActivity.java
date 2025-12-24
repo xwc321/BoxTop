@@ -81,6 +81,7 @@ import com.jayjd.boxtop.utils.DotContainerUtils;
 import com.jayjd.boxtop.utils.LicenseEvent;
 import com.jayjd.boxtop.utils.NetworkMonitor;
 import com.jayjd.boxtop.utils.PrivacyPasswordManager;
+import com.jayjd.boxtop.utils.ProDialog;
 import com.jayjd.boxtop.utils.PurchaseManager;
 import com.jayjd.boxtop.utils.ToolUtils;
 import com.jayjd.boxtop.utils.cpu.CpuMonitor;
@@ -543,6 +544,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showPrivacySpace() {
+        if (!PurchaseManager.getInstance().isPro()) {
+            ProDialog.show(this);
+            return;
+        }
+
         PrivacyPasswordManager privacyPasswordManager = new PrivacyPasswordManager(this);
         if (!privacyPasswordManager.hasPassword()) {
             // 引导用户设置密码
@@ -695,10 +701,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showPrivacyContent() {
-        if (!PurchaseManager.getInstance().isPro()) {
-//            ProDialog.show(context);
-            return;
-        }
         if (hiddenApps.isEmpty()) {
             Toast.makeText(this, "隐私空间无应用", Toast.LENGTH_SHORT).show();
             return;

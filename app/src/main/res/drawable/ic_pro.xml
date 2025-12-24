@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+
+    <!-- 圆形底座 -->
+    <path
+        android:fillColor="#FFFFA500"
+        android:pathData="M32,0
+                          A32,32 0 1,1 31.99,0 Z"/>
+    <path
+        android:fillColor="#33FFFFFF"
+        android:pathData="M32,0 A32,32 0 1,1 31.99,0 Z"/>
+    <!-- Pro 字母 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M20,46 L20,18 L28,18 C32,18 34,20 34,24 C34,26 33,28 31,29.5 L36,46 L28,46 L24,31 L22,46 Z"/>
+</vector>

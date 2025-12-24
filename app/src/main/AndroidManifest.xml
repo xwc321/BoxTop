@@ -29,6 +29,7 @@
         android:required="false" />
 
     <application
+        android:name=".BoxApplication"
         android:allowBackup="true"
         android:banner="@mipmap/ic_launcher"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -46,9 +47,7 @@
         <activity
             android:name=".wallpaper.WallpaperActivity"
             android:exported="false" />
-        <activity
-            android:name=".wallpaper.WallPagerActivity"
-            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
