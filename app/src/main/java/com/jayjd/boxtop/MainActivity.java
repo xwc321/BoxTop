@@ -74,6 +74,7 @@ import com.jayjd.boxtop.listeners.TvOnItemListener;
 import com.jayjd.boxtop.listeners.UsbDriveListener;
 import com.jayjd.boxtop.listeners.ViewAnimationShake;
 import com.jayjd.boxtop.receiver.UsbBroadcastReceiver;
+import com.jayjd.boxtop.utils.App;
 import com.jayjd.boxtop.utils.AppsUtils;
 import com.jayjd.boxtop.utils.BlurCompat;
 import com.jayjd.boxtop.utils.DotContainerUtils;
@@ -149,6 +150,7 @@ public class MainActivity extends AppCompatActivity {
 //            return insets;
 //        });
 //        initDefaleHome();
+        App.setPaid(this, true);
         initView();
         initData();
         initListener();
@@ -496,6 +498,7 @@ public class MainActivity extends AppCompatActivity {
                 tempAppList.addAll(tempAppList.size(), systemApps);
                 dialogAppIconAdapter.submitList(tempAppList);
                 dialogAppIconAdapter.setOnItemClickListener((baseQuickAdapter1, view1, i1) -> addFavoriteApp(baseQuickAdapter1, i1, favoriteAppsAdapter));
+                allDialogGrid.setOnInBorderKeyEventListener(new ViewAnimationShake(allDialogGrid, this));
                 allDialogGrid.setOnItemListener(new TvOnItemListener());
                 allDialogGrid.requestFocus();
                 showMaterialAlertDialog(this, "所有应用", inflate);
@@ -704,6 +707,7 @@ public class MainActivity extends AppCompatActivity {
             AppUtils.launchApp(item.getPackageName());
             sortData(item);
         });
+        allDialogGrid.setOnInBorderKeyEventListener(new ViewAnimationShake(allDialogGrid, this));
         allDialogGrid.setOnItemListener(new TvOnItemListener());
         allDialogGrid.requestFocus();
         allAppsContainer.setVisibility(View.INVISIBLE);
@@ -772,9 +776,6 @@ public class MainActivity extends AppCompatActivity {
             btnConfirm.performClick();
             return true;
         });
-
-
-        return;
     }
 
     private void showSystemApps() {
@@ -798,6 +799,7 @@ public class MainActivity extends AppCompatActivity {
             // 系统应用不参与排序
             AppUtils.launchApp(item.getPackageName());
         });
+        allDialogGrid.setOnInBorderKeyEventListener(new ViewAnimationShake(allDialogGrid, this));
         allDialogGrid.setOnItemListener(new TvOnItemListener());
         allDialogGrid.requestFocus();
         allAppsContainer.setVisibility(View.INVISIBLE);
@@ -859,9 +861,12 @@ public class MainActivity extends AppCompatActivity {
         }
         Glide.with(this).load(drawable).into(imageView);
         TextView previewTitle = inflate.findViewById(R.id.preview_title);
-        previewTitle.setText(appInfo.getName() + "(" + appInfo.getOpenAppCount() + ")");
+        previewTitle.setText(appInfo.getName());
         TextView previewDesc = inflate.findViewById(R.id.preview_desc);
         previewDesc.setText(appInfo.getPackageName());
+        TextView previewVersion = inflate.findViewById(R.id.preview_version);
+        previewVersion.setText("版本 " + appInfo.getVersionName() + "(" + appInfo.getVersionCode() + ") 启动次数 " + appInfo.getOpenAppCount());
+
 
         TvRecyclerView previewSettingsRecyclerview = inflate.findViewById(R.id.preview_settings_recyclerview);
 
