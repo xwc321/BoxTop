@@ -10,6 +10,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.jayjd.boxtop.R;
 import com.jayjd.boxtop.enums.AllSettings;
+import com.jayjd.boxtop.listeners.TvOnItemListener;
+import com.jayjd.boxtop.listeners.ViewAnimationShake;
 import com.jayjd.boxtop.settings.adapter.SettingsAdapter;
 import com.jayjd.boxtop.utils.ProDialog;
 import com.jayjd.boxtop.utils.PurchaseManager;
@@ -31,6 +33,8 @@ public class SettingsActivity extends AppCompatActivity {
         settingTrView.setAdapter(settingsAdapter);
         AllSettings[] values = AllSettings.values();
         settingsAdapter.submitList(List.of(values));
+        settingTrView.setOnInBorderKeyEventListener(new ViewAnimationShake(settingTrView, this));
+        settingTrView.setOnItemListener(new TvOnItemListener());
 
         settingsAdapter.setOnItemClickListener((baseQuickAdapter, view, i) -> {
             AllSettings allSettings = baseQuickAdapter.getItem(i);

@@ -33,5 +33,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/common_title"
         app:layout_constraintWidth_percent=".5"
-        app:tv_verticalSpacingWithMargins="8dp" />
+        app:tv_verticalSpacingWithMargins="8dp"
+        tools:itemCount="3"
+        tools:listitem="@layout/activity_settings_item" />
 </androidx.constraintlayout.widget.ConstraintLayout>
