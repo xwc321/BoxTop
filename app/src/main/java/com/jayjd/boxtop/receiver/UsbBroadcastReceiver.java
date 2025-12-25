@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.util.Log;
 
 import com.jayjd.boxtop.listeners.UsbDriveListener;
+import com.jayjd.boxtop.utils.LicenseEvent;
 
 public class UsbBroadcastReceiver extends BroadcastReceiver {
     private static final String TAG = "UsbBroadcastReceiver";
@@ -49,6 +50,8 @@ public class UsbBroadcastReceiver extends BroadcastReceiver {
 
         } else if (Intent.ACTION_PACKAGE_REPLACED.equals(action)) {
             if (usbDriveListener != null) usbDriveListener.onUpdated(context, pkg);
+        } else if (LicenseEvent.ACTION_PRO_UNLOCKED.equals(action)) {
+            Log.d(TAG, "onReceive: 会员解锁");
         }
     }
 }

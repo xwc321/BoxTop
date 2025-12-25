@@ -6,7 +6,6 @@ import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -245,6 +244,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @RequiresApi(api = Build.VERSION_CODES.S)
     @Override
     protected void onStart() {
@@ -256,6 +256,8 @@ public class MainActivity extends AppCompatActivity {
         filter.addAction(Intent.ACTION_MEDIA_REMOVED);    // 拔出
         filter.addAction(Intent.ACTION_MEDIA_EJECT);      // 弹出
 
+        filter.addAction(LicenseEvent.ACTION_PRO_UNLOCKED); // 会员解锁
+
         filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED); // 蓝牙连接
         filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED); // 蓝牙断开
 
@@ -265,7 +267,11 @@ public class MainActivity extends AppCompatActivity {
         filter.addDataScheme("package");
 
         filter.addDataScheme("file");
-        registerReceiver(usbReceiver, filter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(usbReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(usbReceiver, filter);
+        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -515,13 +521,6 @@ public class MainActivity extends AppCompatActivity {
         topSettingsBar.setOnItemListener(new TvOnItemListener());
         appListGrid.setOnItemListener(new TvOnItemListener());
         favoriteAppsGrid.setOnItemListener(new TvOnItemListener());
-
-        registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-//                refreshAll();
-            }
-        }, new IntentFilter(LicenseEvent.ACTION_PRO_UNLOCKED));
     }
 
     @SuppressLint("NotifyDataSetChanged")
