@@ -558,6 +558,9 @@ public class MainActivity extends AppCompatActivity {
             Dialog dialog = showMaterialAlertDialog(this, "隐私空间 - 输入密码", inflate);
             TextView etPassword = inflate.findViewById(R.id.et_password);
             TextView btnConfirm = inflate.findViewById(R.id.btn_confirm);
+            TextView btnCancel = inflate.findViewById(R.id.btn_cancel);
+            btnCancel.setOnFocusChangeListener(new ViewFocusListener());
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
             TextView tvError = inflate.findViewById(R.id.tv_error);
 
             etPassword.setOnKeyListener((v, keyCode, event) -> {
@@ -736,6 +739,9 @@ public class MainActivity extends AppCompatActivity {
         EditText etConfirm = inflate.findViewById(R.id.et_confirm_password);
         TextView tvError = inflate.findViewById(R.id.tv_error);
         TextView btnConfirm = inflate.findViewById(R.id.btn_confirm);
+        TextView btnCancel = inflate.findViewById(R.id.btn_cancel);
+        btnCancel.setOnFocusChangeListener(new ViewFocusListener());
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
         etPassword.setKeyListener(DigitsKeyListener.getInstance("0123456789"));
         etConfirm.setKeyListener(DigitsKeyListener.getInstance("0123456789"));
 
