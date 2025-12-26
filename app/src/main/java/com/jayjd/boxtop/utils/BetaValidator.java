@@ -53,6 +53,7 @@ public final class BetaValidator {
     public void stopServer() {
         if (dialog != null) {
             dialog.dismiss();
+            dialog = null;
         }
         ControlManager.get().stopServer();
     }
