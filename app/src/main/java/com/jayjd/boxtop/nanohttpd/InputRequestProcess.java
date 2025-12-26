@@ -28,6 +28,8 @@ public class InputRequestProcess implements RequestProcess {
     public boolean isRequest(NanoHTTPD.IHTTPSession session, String fileName) {
         if (session.getMethod() == NanoHTTPD.Method.POST) {
             return fileName.equals("/api/push/wallpaper") || fileName.equals("/api/push/app");
+        } else if (session.getMethod() == NanoHTTPD.Method.GET) {
+            return fileName.equals("/api/getDeviceId");
         }
         return false;
     }
@@ -35,27 +37,40 @@ public class InputRequestProcess implements RequestProcess {
     @Override
     public NanoHTTPD.Response doResponse(NanoHTTPD.IHTTPSession session, String uri, Map<String, String> params, Map<String, String> files) {
         DataReceiver mDataReceiver = remoteServer.getDataReceiver();
-        String type = params.get("type");      // apk / wallpaper
-        String source = params.get("source");  // local / url
-        String url = params.get("url");  // local / url
-        Log.d(TAG, "doResponse: " + uri + " - " + type + " - " + source);
-        try {
-            if ("apk".equals(type)) {
-                if ("local".equals(source)) {
-                    mDataReceiver.onLocalInstallApk(params.get("localPath"));
+        if (session.getMethod() == NanoHTTPD.Method.POST) {
+            String type = params.get("type");      // apk / wallpaper
+            String source = params.get("source");  // local / url
+            String url = params.get("url");  // local / url
+            Log.d(TAG, "doResponse: " + uri + " - " + type + " - " + source);
+            try {
+                if ("apk".equals(type)) {
+                    if ("local".equals(source)) {
+                        mDataReceiver.onLocalInstallApk(params.get("localPath"));
+                    } else {
+                        mDataReceiver.onDownloadApk(type, url);
+                    }
                 } else {
-                    mDataReceiver.onDownloadApk(type,url);
+                    if ("local".equals(source)) {
+                        mDataReceiver.onLocalWallpaper(params.get("localPath"));
+                    } else {
+                        mDataReceiver.onDownloadWallpaper(type, url);
+                    }
                 }
-            } else {
-                if ("local".equals(source)) {
-                    mDataReceiver.onLocalWallpaper(params.get("localPath"));
-                } else {
-                    mDataReceiver.onDownloadWallpaper(type,url);
-                }
+                return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.OK, "推送成功");
+            } catch (Exception e) {
+                return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.INTERNAL_ERROR, e.getMessage());
             }
-            return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.OK, "推送成功");
-        } catch (Exception e) {
-            return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.INTERNAL_ERROR, e.getMessage());
+        } else if (session.getMethod() == NanoHTTPD.Method.GET) {
+            if (uri.equals("/api/getDeviceId")) {
+                String deviceId = mDataReceiver.getDeviceId();
+                Log.d(TAG, "doResponse: " + deviceId);
+                return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.OK, deviceId);
+            } else {
+                return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.NOT_FOUND, "404");
+            }
+        } else {
+            return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.NOT_FOUND, "404");
         }
+
     }
 }

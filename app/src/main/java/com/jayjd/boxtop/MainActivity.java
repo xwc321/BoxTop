@@ -76,6 +76,7 @@ import com.jayjd.boxtop.listeners.ViewFocusListener;
 import com.jayjd.boxtop.receiver.UsbBroadcastReceiver;
 import com.jayjd.boxtop.settings.SettingsActivity;
 import com.jayjd.boxtop.utils.AppsUtils;
+import com.jayjd.boxtop.utils.BetaValidator;
 import com.jayjd.boxtop.utils.BlurCompat;
 import com.jayjd.boxtop.utils.DotContainerUtils;
 import com.jayjd.boxtop.utils.LicenseEvent;
@@ -125,41 +126,8 @@ public class MainActivity extends AppCompatActivity {
     ViewPager2 viewPagerCards;
     CpuMonitor cpuMonitor;
     TextView tvHomeTime;
-    private TvTimeHelper timeHelper ;
-
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
-    @RequiresApi(api = Build.VERSION_CODES.S)
-    @Override
-    protected void onStart() {
-        super.onStart();
-        initDeviceState();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_MEDIA_MOUNTED);    // 插入
-        filter.addAction(Intent.ACTION_MEDIA_UNMOUNTED);  // 拔出
-        filter.addAction(Intent.ACTION_MEDIA_REMOVED);    // 拔出
-        filter.addAction(Intent.ACTION_MEDIA_EJECT);      // 弹出
-
-        filter.addAction(LicenseEvent.ACTION_PRO_UNLOCKED); // 会员解锁
-
-        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED); // 蓝牙连接
-        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED); // 蓝牙断开
-
-        filter.addAction(Intent.ACTION_PACKAGE_ADDED);
-        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
-        filter.addAction(Intent.ACTION_PACKAGE_REPLACED);
-        filter.addDataScheme("package");
-
-        filter.addDataScheme("file");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(usbReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(usbReceiver, filter);
-        }
-        timeHelper.start(time -> {
-            tvHomeTime.setText(time);
-        });
-
-    }
+    BetaValidator betaValidator;
+    private TvTimeHelper timeHelper;
 
     @Override
     protected void onResume() {
@@ -1019,9 +987,44 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    @Override
+    protected void onStart() {
+        super.onStart();
+        initDeviceState();
+        betaValidator.getBaseConfigData();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_MEDIA_MOUNTED);    // 插入
+        filter.addAction(Intent.ACTION_MEDIA_UNMOUNTED);  // 拔出
+        filter.addAction(Intent.ACTION_MEDIA_REMOVED);    // 拔出
+        filter.addAction(Intent.ACTION_MEDIA_EJECT);      // 弹出
+
+        filter.addAction(LicenseEvent.ACTION_PRO_UNLOCKED); // 会员解锁
+
+        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED); // 蓝牙连接
+        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED); // 蓝牙断开
+
+        filter.addAction(Intent.ACTION_PACKAGE_ADDED);
+        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+        filter.addAction(Intent.ACTION_PACKAGE_REPLACED);
+        filter.addDataScheme("package");
+
+        filter.addDataScheme("file");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(usbReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(usbReceiver, filter);
+        }
+        timeHelper.start(time -> {
+            tvHomeTime.setText(time);
+        });
+
+    }
+
     @SuppressLint("NotifyDataSetChanged")
     private void initData() {
-
+        betaValidator = new BetaValidator(this);
         cpuMonitor = CpuMonitor.getInstance(this);
         appDataBase = AppDataBase.getInstance(this);
         favoriteAppInfoDao = appDataBase.getFavoriteAppInfoDao();

@@ -22,6 +22,35 @@ $(function () {
     });
 
 });
+function onBetaPer(){
+    fetch('/api/getDeviceId', {
+        method: 'GET'
+    })
+    .then(res => res.text())
+    .then(data => {
+        // 创建可点击复制的元素
+        const dataDiv = document.getElementById("betaData");
+        dataDiv.innerHTML = `
+            <div class="weui-cell input-field" style="word-break: break-all; white-space: normal;" onclick="copyToClipboard('${data}')">
+                ${data} （点击复制）
+            </div>
+        `;
+        console.log(data);
+    })
+    .catch(err => {
+        console.error(err);
+        alert('获取数据异常');
+    });
+
+}
+function copyToClipboard(text) {
+    // 使用 Clipboard API 复制文本
+    navigator.clipboard.writeText(text).then(() => {
+        alert("已复制到剪贴板,将设备码发送给开发者进行授权！");
+    }).catch(err => {
+        alert("复制失败：" + err);
+    });
+}
 
 function onPushWallPaper() {
     const source = document.querySelector('input[name="wallpaperSource"]:checked').value;

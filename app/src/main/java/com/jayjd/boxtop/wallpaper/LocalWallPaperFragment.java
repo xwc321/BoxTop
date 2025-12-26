@@ -68,6 +68,11 @@ public class LocalWallPaperFragment extends BaseCardFragment {
             }
 
             @Override
+            public String getDeviceId() {
+                return "";
+            }
+
+            @Override
             public void onLocalInstallApk(String absoluteFile) {
                 requireActivity().runOnUiThread(() -> Toast.makeText(appContext, "软件接收成功", Toast.LENGTH_SHORT).show());
             }

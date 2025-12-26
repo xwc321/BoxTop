@@ -8,4 +8,6 @@ public interface DataReceiver {
     void onLocalInstallApk(String absoluteFile);
 
     void onLocalWallpaper(String absolutePath);
+
+    String getDeviceId();
 }
