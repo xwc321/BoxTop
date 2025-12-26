@@ -20,7 +20,7 @@ import com.jayjd.boxtop.R;
 import com.jayjd.boxtop.entity.BetaConfig;
 import com.jayjd.boxtop.nanohttpd.ControlManager;
 import com.jayjd.boxtop.nanohttpd.QRCodeGen;
-import com.jayjd.boxtop.nanohttpd.interfas.DataReceiver;
+import com.jayjd.boxtop.nanohttpd.interfas.BaseDataReceiver;
 import com.lzy.okgo.OkGo;
 import com.lzy.okgo.callback.StringCallback;
 import com.lzy.okgo.model.Response;
@@ -56,9 +56,6 @@ public final class BetaValidator {
                     boolean deviceAllowed = isDeviceAllowed(context, betaConfig);
                     if (deviceAllowed) {
                         stopServer();
-                        if (dialog != null) {
-                            dialog.dismiss();
-                        }
                         Toast.makeText(context, "欢迎加入内测", Toast.LENGTH_SHORT).show();
                     } else {
                         showFailDialog(deviceId, betaConfig);
@@ -75,35 +72,13 @@ public final class BetaValidator {
     }
 
     public void startServer() {
-        ControlManager.get().startServer(new DataReceiver() {
-            @Override
-            public void onDownloadApk(String type, String url) {
-
-            }
-
-            @Override
-            public void onDownloadWallpaper(String type, String url) {
-
-            }
-
-            @Override
-            public void onLocalInstallApk(String absoluteFile) {
-
-            }
-
-            @Override
-            public void onLocalWallpaper(String absolutePath) {
-
-            }
-
-            @Override
-            public String getDeviceId() {
-                return (String) SPUtils.get(context, "deviceId", "");
-            }
-        });
+        ControlManager.get().startServer(new BaseDataReceiver());
     }
 
     public void stopServer() {
+        if (dialog != null) {
+            dialog.dismiss();
+        }
         ControlManager.get().stopServer();
     }
 

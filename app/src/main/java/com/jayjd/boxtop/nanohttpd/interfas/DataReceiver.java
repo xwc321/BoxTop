@@ -1,5 +1,7 @@
 package com.jayjd.boxtop.nanohttpd.interfas;
 
+import android.content.Context;
+
 public interface DataReceiver {
     void onDownloadApk(String type, String url);
 
@@ -9,5 +11,5 @@ public interface DataReceiver {
 
     void onLocalWallpaper(String absolutePath);
 
-    String getDeviceId();
+    String getDeviceId(Context context);
 }

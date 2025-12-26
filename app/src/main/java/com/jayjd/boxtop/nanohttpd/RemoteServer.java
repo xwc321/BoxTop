@@ -158,8 +158,8 @@ public class RemoteServer extends NanoHTTPD {
     }
 
     private void addPostRequestProcess() {
-        postRequestList.add(new InputRequestProcess(this));
-        getRequestList.add(new InputRequestProcess(this));
+        postRequestList.add(new InputRequestProcess(this, context));
+        getRequestList.add(new InputRequestProcess(this, context));
     }
 
     public String getLoadAddress() {

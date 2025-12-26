@@ -1,6 +1,7 @@
 package com.jayjd.boxtop.nanohttpd;
 
 
+import android.content.Context;
 import android.util.Log;
 
 import com.jayjd.boxtop.nanohttpd.interfas.DataReceiver;
@@ -18,10 +19,12 @@ import fi.iki.elonen.NanoHTTPD;
 
 public class InputRequestProcess implements RequestProcess {
     private final RemoteServer remoteServer;
+    private final Context context;
     private final String TAG = InputRequestProcess.class.getSimpleName();
 
-    public InputRequestProcess(RemoteServer remoteServer) {
+    public InputRequestProcess(RemoteServer remoteServer, Context context) {
         this.remoteServer = remoteServer;
+        this.context = context;
     }
 
     @Override
@@ -62,7 +65,7 @@ public class InputRequestProcess implements RequestProcess {
             }
         } else if (session.getMethod() == NanoHTTPD.Method.GET) {
             if (uri.equals("/api/getDeviceId")) {
-                String deviceId = mDataReceiver.getDeviceId();
+                String deviceId = mDataReceiver.getDeviceId(context);
                 Log.d(TAG, "doResponse: " + deviceId);
                 return RemoteServer.createPlainTextResponse(NanoHTTPD.Response.Status.OK, deviceId);
             } else {

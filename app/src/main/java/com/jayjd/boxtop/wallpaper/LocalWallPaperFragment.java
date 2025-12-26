@@ -20,7 +20,7 @@ import com.jayjd.boxtop.listeners.TvOnItemListener;
 import com.jayjd.boxtop.listeners.ViewAnimationShake;
 import com.jayjd.boxtop.nanohttpd.ControlManager;
 import com.jayjd.boxtop.nanohttpd.QRCodeGen;
-import com.jayjd.boxtop.nanohttpd.interfas.DataReceiver;
+import com.jayjd.boxtop.nanohttpd.interfas.BaseDataReceiver;
 import com.jayjd.boxtop.utils.SPUtils;
 import com.jayjd.boxtop.utils.ToolUtils;
 import com.jayjd.boxtop.wallpaper.adapter.LocalWallAdapter;
@@ -53,7 +53,8 @@ public class LocalWallPaperFragment extends BaseCardFragment {
     }
 
     private void initRemoteServer() {
-        ControlManager.get().startServer(new DataReceiver() {
+        ControlManager.get().startServer(new BaseDataReceiver(){
+
             @SuppressLint("NotifyDataSetChanged")
             @Override
             public void onLocalWallpaper(String absolutePath) {
@@ -65,11 +66,6 @@ public class LocalWallPaperFragment extends BaseCardFragment {
                     }
                 });
 
-            }
-
-            @Override
-            public String getDeviceId() {
-                return "";
             }
 
             @Override
