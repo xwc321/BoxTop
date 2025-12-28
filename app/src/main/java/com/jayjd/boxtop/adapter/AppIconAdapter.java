@@ -15,6 +15,7 @@ import com.google.android.material.card.MaterialCardView;
 import com.jayjd.boxtop.R;
 import com.jayjd.boxtop.entity.AppInfo;
 import com.jayjd.boxtop.utils.PurchaseManager;
+import com.jayjd.boxtop.utils.SPUtils;
 import com.jayjd.boxtop.utils.ToolUtils;
 
 public class AppIconAdapter extends BaseQuickAdapter<AppInfo, QuickViewHolder> {
@@ -31,7 +32,7 @@ public class AppIconAdapter extends BaseQuickAdapter<AppInfo, QuickViewHolder> {
             MaterialCardView cardView = quickViewHolder.getView(R.id.card);
             cardView.setCardBackgroundColor(appInfo.getCardColor());
             // TODO: 2025/12/24 这里后续要在设置里面 进行设置后 判断是否付费 或者在软件设置的时候就判断是否pro
-            boolean tvShow = PurchaseManager.getInstance().isPro();
+            boolean tvShow = (boolean) SPUtils.get(getContext(), PurchaseManager.APP_NAME_SHOW, false);
             quickViewHolder.setText(R.id.tv_name, !tvShow ? appInfo.getName() : "");
             quickViewHolder.setGone(R.id.tv_name, tvShow);
             if (appInfo.getPackageName().isEmpty()) {

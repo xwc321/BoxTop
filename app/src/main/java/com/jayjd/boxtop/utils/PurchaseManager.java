@@ -9,6 +9,7 @@ import lombok.Getter;
 @Getter
 public class PurchaseManager {
 
+    public static final String APP_NAME_SHOW = "app_name_show";
     private static volatile PurchaseManager instance;
     private LicenseLevel licenseLevel = LicenseLevel.FREE;
 

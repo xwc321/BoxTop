@@ -1,3 +1,4 @@
+import com.android.build.gradle.internal.api.ApkVariantOutputImpl
 import com.github.megatronking.stringfog.plugin.StringFogExtension
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -10,12 +11,12 @@ apply(plugin = "stringfog")
 
 android.applicationVariants.all {
     outputs.all {
-        if (this is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
+        if (this is ApkVariantOutputImpl) {
             val config = project.android.defaultConfig
             val versionName = config.versionName
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm")
             val createTime = LocalDateTime.now().format(formatter)
-            this.outputFileName = "${project.name}_${this.name}_${versionName}_$createTime.apk"
+            this.outputFileName = "${rootProject.name}_${this.name}_${versionName}_$createTime.apk"
         }
     }
 }
