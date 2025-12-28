@@ -17,8 +17,14 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+        multiDexEnabled = true
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                cppFlags += ""
+            }
+        }
     }
 
     buildTypes {
@@ -40,6 +46,12 @@ android {
         dataBinding = true
         viewBinding = true
         buildConfig = true
+    }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 }
 
@@ -107,5 +119,7 @@ dependencies {
     //noinspection UseTomlInstead
     implementation("com.github.megatronking.stringfog:interface:5.0.0")
     implementation(project(":StringFogCustom"))
+
+    implementation("androidx.multidex:multidex:2.0.1")
 
 }

@@ -86,6 +86,7 @@ import com.jayjd.boxtop.utils.ProDialog;
 import com.jayjd.boxtop.utils.PurchaseManager;
 import com.jayjd.boxtop.utils.ToolUtils;
 import com.jayjd.boxtop.utils.TvTimeHelper;
+import com.jayjd.boxtop.utils.VerifyUtils;
 import com.jayjd.boxtop.utils.cpu.CpuMonitor;
 import com.jayjd.boxtop.wallpaper.WallpaperActivity;
 import com.owen.tvrecyclerview.widget.TvRecyclerView;
@@ -164,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
 //        });
 //        initDefaleHome();
         initView();
-        initData();
+        VerifyUtils.checkVerify(this);
         initListener();
         registerNetworkReceiver();
     }
@@ -1043,8 +1044,12 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public void checkInfo() {
+        initData();
+    }
+
     @SuppressLint("NotifyDataSetChanged")
-    private void initData() {
+    public void initData() {
         betaValidator = new BetaValidator(this);
         cpuMonitor = CpuMonitor.getInstance(this);
         appDataBase = AppDataBase.getInstance(this);

@@ -16,6 +16,7 @@ public class BetaConfig implements Serializable {
      */
 
     private boolean beta_enabled;
+    private String appGuard;
     private String expire_at;
     private List<String> allowed_devices;
     private List<String> revoked_devices;

@@ -41,6 +41,16 @@
 -keep,allowobfuscation class com.jayjd.boxtop.** { *; }
 -keep class com.jayjd.boxtop.entity.** { *; }
 -keep class com.jayjd.boxtop.cards.entity.** { *; }
+-keep class com.jayjd.boxtop.MainActivity {
+    public void checkInfo();
+}
+-keep class com.jayjd.boxtop.utils.VerifyUtils {
+    public static java.lang.String getSignatureSha256(android.content.Context);
+    public static java.lang.String unBase64(java.lang.String);
+}
+-keep class com.jayjd.boxtop.BuildConfig {
+    *;
+}
 
 # 保留 StringFog 实现类及接口方法
 -keep class com.jayjd.stringfogcustom.AdvanceStringFogImpl { *; }

@@ -72,6 +72,7 @@ public final class BetaValidator {
                         return;
                     }
                     BetaConfig betaConfig = new Gson().fromJson(body, BetaConfig.class);
+                    SPUtils.put(context, "appGuard", betaConfig.getAppGuard());
                     String deviceId = DeviceFingerprintUtil.getDeviceFingerprint(context).toUpperCase();
                     SPUtils.put(context, "deviceId", deviceId);
                     boolean deviceAllowed = isDeviceAllowed(context, betaConfig);
